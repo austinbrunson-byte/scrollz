@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: https://picsum.photos https://*.picsum.photos https://fastly.picsum.photos https://placehold.co https://loremflickr.com https://*.staticflickr.com; connect-src 'self' data: blob:;">
 <title>SCROLLZ™</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -21,47 +22,39 @@
   #feed::-webkit-scrollbar{display:none;}
   .post{height:100vh; height:100dvh; scroll-snap-align:start; scroll-snap-stop:always; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#08080f;}
 
-  .photo{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; opacity:0; transition:opacity .45s ease; background:#111;}
+  .photo{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; opacity:0; transition:opacity .45s ease; background:transparent;}
   .photo.on{opacity:1;}
   .ken{animation:ken 18s ease-in-out infinite alternate;}
   @keyframes ken{0%{transform:scale(1.08) translate(0,0)}100%{transform:scale(1.3) translate(-4%,-3%)}}
-  .cssbg{position:absolute; inset:0; z-index:0;}
-  .cssbg.mesh{animation:meshmove 12s ease-in-out infinite alternate; background-size:200% 200%;}
-  @keyframes meshmove{0%{background-position:0% 0%}100%{background-position:100% 100%}}
-  .cssbg.spin{animation:spinhue 11s linear infinite;}
-  @keyframes spinhue{to{filter:hue-rotate(360deg)}}
-  .cssbg.rays{animation:spinslow 20s linear infinite;}
-  @keyframes spinslow{to{transform:rotate(360deg)}}
+  .satcanvas{position:absolute; inset:0; width:100%; height:100%; z-index:0; object-fit:cover;}
+  .expandHint{position:absolute; top:calc(56px + env(safe-area-inset-top)); right:10px; z-index:7; background:#000a; border:1px solid #ffffff33; border-radius:999px; padding:5px 11px; font-size:12px; font-weight:800; color:#fff; pointer-events:none; opacity:.85;}
 
-  .vidlayer{position:absolute; inset:0; mix-blend-mode:screen; opacity:.5; z-index:1; pointer-events:none;}
+  .vidlayer{position:absolute; inset:0; mix-blend-mode:screen; opacity:.42; z-index:2; pointer-events:none;}
   .blob{position:absolute; width:60vw; height:60vw; border-radius:50%; filter:blur(45px); animation:drift 10s ease-in-out infinite;}
   @keyframes drift{0%{transform:translate(-10vw,-10vh) scale(1)}50%{transform:translate(40vw,30vh) scale(1.4)}100%{transform:translate(-10vw,40vh) scale(.9)}}
-  .scanline{position:absolute; inset:0; z-index:1; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.22) 3px); animation:scan 8s linear infinite; opacity:.35; pointer-events:none;}
+  .scanline{position:absolute; inset:0; z-index:2; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.18) 3px); animation:scan 8s linear infinite; opacity:.3; pointer-events:none;}
   @keyframes scan{to{background-position:0 200px}}
-  .vignette{position:absolute; inset:0; z-index:2; background:linear-gradient(180deg,rgba(0,0,0,.55),transparent 20%,transparent 48%,rgba(0,0,0,.85)); pointer-events:none;}
-  .grain{position:absolute; inset:0; z-index:2; opacity:.05; mix-blend-mode:overlay; pointer-events:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");}
+  .vignette{position:absolute; inset:0; z-index:3; background:linear-gradient(180deg,rgba(0,0,0,.5),transparent 20%,transparent 50%,rgba(0,0,0,.82)); pointer-events:none;}
+  .grain{position:absolute; inset:0; z-index:3; opacity:.045; mix-blend-mode:overlay; pointer-events:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");}
 
-  .megaword{position:absolute; font-weight:900; text-align:center; padding:18px; font-size:clamp(34px,11vw,96px); line-height:.9; letter-spacing:-3px; z-index:3; animation:throb 1.4s ease-in-out infinite; filter:drop-shadow(0 4px 24px #000);}
+  .megaword{position:absolute; font-weight:900; text-align:center; padding:18px; font-size:clamp(34px,11vw,96px); line-height:.9; letter-spacing:-3px; z-index:4; animation:throb 1.4s ease-in-out infinite; filter:drop-shadow(0 4px 24px #000);}
   @keyframes throb{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-  .emoji{position:absolute; font-size:clamp(60px,22vw,180px); z-index:3; animation:wobble 1.2s ease-in-out infinite; filter:drop-shadow(0 8px 20px #000a);}
+  .emoji{position:absolute; font-size:clamp(60px,22vw,180px); z-index:4; animation:wobble 1.2s ease-in-out infinite; filter:drop-shadow(0 8px 20px #000a);}
   @keyframes wobble{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.14)}}
 
-  /* TABLOID banner */
-  .tabloid{position:absolute; top:18%; left:0; right:0; z-index:4; text-align:center; padding:0 16px; pointer-events:none;}
+  .tabloid{position:absolute; top:17%; left:0; right:0; z-index:4; text-align:center; padding:0 16px; pointer-events:none;}
   .tabloid .kicker{display:inline-block; background:var(--hot); color:#fff; font-weight:900; font-size:13px; letter-spacing:2px; padding:4px 12px; border-radius:4px; transform:rotate(-2deg); margin-bottom:10px; box-shadow:0 4px 16px #000a;}
   .tabloid .head{font-weight:900; font-size:clamp(26px,8.5vw,52px); line-height:1.02; color:#fff; text-shadow:0 3px 0 #000,0 0 24px rgba(255,45,120,.6); -webkit-text-stroke:1px #000;}
   .tabloid .head em{color:var(--gold); font-style:normal;}
   .tabloid .sub{margin-top:10px; font-weight:800; font-size:15px; color:#ffe; text-shadow:0 2px 8px #000; opacity:.95;}
 
-  /* LIFE HACK card */
-  .hackcard{position:absolute; left:14px; right:14px; top:24%; z-index:4; background:rgba(8,10,20,.62); backdrop-filter:blur(3px); border:1px solid #ffffff22; border-radius:18px; padding:18px; pointer-events:none;}
+  .hackcard{position:absolute; left:14px; right:14px; top:23%; z-index:4; background:rgba(8,10,20,.6); backdrop-filter:blur(3px); border:1px solid #ffffff22; border-radius:18px; padding:18px; pointer-events:none;}
   .hackcard .badge2{display:inline-block; background:var(--acid); color:#000; font-weight:900; font-size:12px; letter-spacing:1px; padding:3px 10px; border-radius:999px; margin-bottom:12px;}
   .hackcard h3{font-size:clamp(20px,6vw,30px); font-weight:900; line-height:1.05; margin-bottom:12px;}
   .hackcard ol{margin:0 0 4px 18px; padding:0;}
   .hackcard li{font-size:15px; font-weight:700; margin-bottom:7px; line-height:1.25;}
   .hackcard .mind{margin-top:10px; font-weight:900; color:var(--gold); font-size:14px;}
 
-  /* TREND card */
   .trendcard{position:absolute; left:0; right:0; top:30%; z-index:4; text-align:center; pointer-events:none; padding:0 14px;}
   .trendcard .lab{display:inline-block; font-size:12px; font-weight:900; letter-spacing:3px; color:var(--cyan); margin-bottom:8px;}
   .trendcard .big{font-weight:900; font-size:clamp(40px,15vw,120px); line-height:.85; letter-spacing:-2px; background:linear-gradient(90deg,var(--hot),var(--gold),var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 4px 16px #000);}
@@ -92,6 +85,12 @@
   @keyframes slam{0%{transform:scale(2.5); opacity:0}60%{transform:scale(.9)}100%{transform:scale(1); opacity:1}}
 
   .confetti{position:fixed; width:10px; height:14px; z-index:88; pointer-events:none; top:-20px;}
+
+  /* FULLSCREEN image viewer */
+  #viewer{position:fixed; inset:0; z-index:170; background:#000; display:none; align-items:center; justify-content:center;}
+  #viewer img{max-width:100%; max-height:100%; object-fit:contain;}
+  #viewer .vclose{position:absolute; top:calc(16px + env(safe-area-inset-top)); right:18px; font-size:30px; font-weight:900; color:#fff; cursor:pointer; z-index:2; text-shadow:0 2px 8px #000;}
+  #viewer .vload{position:absolute; color:#888; font-weight:800; font-size:15px;}
 
   #gate{position:fixed; inset:0; z-index:200; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; padding:30px; text-align:center;}
   #gate h1{font-size:clamp(50px,20vw,120px); font-weight:900; background:linear-gradient(90deg,var(--hot),var(--gold),var(--acid),var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:-4px; animation:hue 3s linear infinite;}
@@ -133,7 +132,7 @@
   .cmUser{font-size:13px; font-weight:800; color:#cfd4ff;}
   .cmUser .verif{color:var(--cyan); font-size:12px;}
   .cmUser .time{color:#777; font-weight:600; margin-left:6px; font-size:11px;}
-  .cmText{font-size:15px; margin:2px 0 5px; line-height:1.3; word-wrap:break-word;}
+  .cmText{font-size:15px; margin:2px 0 5px; line-height:1.3; word-wrap:break-word; white-space:pre-line;}
   .cmMeta{display:flex; gap:16px; align-items:center; font-size:12px; color:#888; font-weight:700;}
   .cmMeta span{cursor:pointer; display:flex; align-items:center; gap:4px;}
   .cmMeta .lk.on{color:var(--hot);}
@@ -147,9 +146,9 @@
 
 <div id="gate">
   <h1>SCROLLZ</h1>
-  <p>0 ADS • 0 PURPOSE • ∞ POSTS<br>headlines 📰 hacks 🧠 trends 📈 chaos 🌀</p>
+  <p>real pics 📸 satisfying loops 🌀 headlines 📰<br>tap any photo to go fullscreen</p>
   <button id="go">TAP TO ROT 🧠</button>
-  <p style="font-size:11px;opacity:.5">tap = consent to lose 5 minutes • all gems are fake • everyone here is made up</p>
+  <p style="font-size:11px;opacity:.5">tap = consent to lose 5 minutes • gems are fake • celebs are made up</p>
 </div>
 
 <div id="top">
@@ -164,6 +163,8 @@
 <div id="burst"><div class="big" id="burstBig">+50</div><div class="sub" id="burstSub">COMBO!</div></div>
 
 <div id="feed"></div>
+
+<div id="viewer"><span class="vclose" id="vClose">✕</span><span class="vload">loading full image…</span><img id="vImg" alt=""></div>
 
 <div id="shop">
   <span class="sheetclose" id="shopClose">✕</span>
@@ -212,71 +213,176 @@ const SFX={
   drop(){ tone(180,.5,'sine',.25,1400); }
 };
 
-/* ============ generators ============ */
-const A=["sigma","gyatt","rizz","ohio","skibidi","fanum","mewing","goon","NPC","based","cringe","mid","goated","unc","aura","delulu","brainrot","cooked","yapping","glazing","menace","ick","slay","bussin"];
-const B=["energy","grindset","mindset","vibes","moment","behavior","check","speedrun","arc","lore","saga","reveal","challenge","hours","but make it","tier list","ranked","explained","gone wrong","at 3am","IRL","2025 edition","final boss"];
-const EMO=["💀","🔥","😭","🗿","🤡","👁️","🥶","🧠","🫠","🤖","😈","💅","🦅","🐐","🤓","🫨","👽","🍑","🤑","🥴","😵‍💫","🫥","🥵","🤯"];
-const COLORS=["#ff2d78","#39ff14","#ffd400","#00e5ff","#a64dff","#ff6b00","#ff0044","#00ffaa"];
-const HANDLES=["@sigma_grindset_official","@npc_andy_2009","@ohio_final_boss","@certified_yapper","@brainrot_daily","@gyatt_enjoyer","@unc_status_max","@delulu_solulu","@aura_farmer_999","@cooked_ngl","@menace2society","@goated_takes"];
-const HOOK=["WAIT FOR IT...","99% CAN'T DO THIS","this changed my life fr","you won't believe #4","POV:","nobody is talking about this","they don't want you to know","watch till the end 🤯","this is so real","tag someone who needs this","reply 'me' if you agree","SAVE THIS BEFORE IT'S GONE","the algorithm sent you here for a reason","don't scroll past this one"];
-
-/* ---- TABLOID (fake celebs, made-up names — parody) ---- */
-const CELEB=["BRAYDEN STORMZ","KAYLEIGH MAXX","CHAD THUNDERVEIN","DJ AURAFARM","LIL UNCANNY","MIKAYLA VORTEX","BRONSON PEAKE","SAVANNAH GLAZE","TYRESE OHIO","ZADDY MCFINANCE","PRINCESS DELULU","RIVER SIGMASON","BLAZE GYATTLEY","DUCHESS OF OHIO","KEANU REAVES (no relation)","MOONpie XÆ","TRENT RIZZLER","BAMBI SKIBIDISON"];
-const TAB_KICK=["EXCLUSIVE","SHOCKING","YOU WON'T BELIEVE","BREAKING","LEAKED","INSIDERS SAY","CAUGHT ON CAM","SOURCES CONFIRM","UNHINGED","JUST IN"];
-const TAB_VERB=["spotted","caught","seen","photographed","filmed","exposed","reportedly","allegedly"];
-const TAB_DOING=["buying 47 grimace shakes at 3am","crying into a bowl of dry cereal","mewing in the produce aisle","fighting a Roomba","renaming their cat 'the algorithm'","ordering a large at a Wendy's drive-thru 6 times","staring at a wall for 'aura reasons'","teaching pigeons to scroll","investing their whole net worth in fake gems","caught NOT touching grass"];
-const TAB_SUB=["fans are LOSING it","the internet is in shambles","experts are baffled","nobody saw this coming","this is everything","the comments are unhinged","it's giving final boss","screens cannot handle this"];
-
-/* ---- LIFE HACKS (absurd) ---- */
-const HACKS=[
-  {t:"This ONE trick instantly fixes your aura",s:["Stare at the ceiling for 4 seconds","Whisper 'sigma' under your breath","Refuse to explain why","Walk away in slow motion"],m:"💡 +400 aura, guaranteed"},
-  {t:"How to be productive (life-changing)",s:["Open a to-do list","Look at it","Close it","Reward yourself with 3 hours of scrolling"],m:"💡 you've earned this"},
-  {t:"Sleep hack doctors HATE",s:["Get in bed at a reasonable hour","Pick up phone 'for one second'","It is now 4am","Repeat nightly for best results"],m:"💡 works every single time"},
-  {t:"Genius money hack they hide from you",s:["Open banking app","Stare at the number","Close banking app","The number is now someone else's problem"],m:"💡 financial freedom unlocked"},
-  {t:"Glow up in 5 seconds (no cap)",s:["Lower your phone brightness","Tilt head 12 degrees","Squint slightly","Believe"],m:"💡 you are now THAT girl/guy"},
-  {t:"Clean your whole room with this hack",s:["Pick up one (1) sock","Get distracted","Lie down","Manifest a cleaner room instead"],m:"💡 the room is clean in spirit"},
-  {t:"Become a morning person instantly",s:["Set 14 alarms","Snooze all 14","Wake up at noon refreshed","Tell everyone you 'love mornings'"],m:"💡 nailed it"},
-  {t:"Hydration hack that changed my life",s:["Buy a 40oz tumbler","Fill it once","Carry it everywhere for vibes","Never actually drink from it"],m:"💡 hydrated (aesthetically)"}
-];
-
-/* ---- TREND cards ---- */
-const TREND_LAB=["TRENDING #1","CERTIFIED VIRAL","THE NEW WAVE","#1 ON FYP","BREAKING THE ALGORITHM","EVERYONE'S DOING IT"];
-const TREND_NAME=["DRIPCORE","GLOOMscroll","HYPERAURA","FERALcore","goblinmaxxing","SIGMAwave","VAPORDOOM","cottagegoon","BRAINROTcore","LIMINALrizz","DOPAMINEcore","ASCENSIONmaxxing"];
-const TREND_STAT=["+9,400% this week","2.3B views and climbing","your favorite creator is already on it","scientists can't explain it","up 12,000% since this morning","the FYP is 90% this now"];
-
-/* ---- comments ---- */
-const CM_USERS=["xX_voidwalker_Xx","brittany_no_h","ohioan_prime","just_some_guy","404namenotfound","grimace_shake_survivor","ur_local_npc","sigmamale_2007","not_a_bot_promise","gigachad_jr","mootksha","lilbro_lore","aura_points_only","certified_unc","gyattlefield_5","skibidi_scientist","deluluqueen","brokeboy_summer","ratio_dispenser","caffeine_demon","the_real_slim_NPC","femboy_hooters_mgr","gooncave_admin","copium_addict_99"];
-const CM_TEXT=["bro really said 💀💀💀","this is so real it hurt me physically","nah why is this actually me","the way i GASPED","not me watching this 14 times","chat is this real","he's so right tho","caught me lacking ngl","the algorithm has been studying me","this unlocked a memory","ok but the editing 🔥","first 😎","why did i scroll to comments instead of touching grass","bro woke up and chose violence","this is my roman empire now","tell me why i felt that","i'm in this post and i don't like it","gonna show this to my therapist","unc behavior fr","peak fiction","they don't make em like this anymore","W post no notes","this is the wall the meme warned us about","sir this is a wendy's","real ones know","the lore is insane","nobody:\nabsolutely nobody:\nthis post:","i'm telling you the simulation is breaking","crying in the club rn","helpppp 😭😭","this needs to be studied","ok that's enough internet for today (it is not)","the way this has no business going so hard","i came here to feel something and i did","brb showing my whole family"];
-const CM_REPLY=["real","fax no printer","this","🔥🔥","stop it's not that deep (it is)","crying","said what we all thinking","based","ok unc","💀"];
-const CM_AVCOL=["#ff2d78","#39ff14","#ffd400","#00e5ff","#a64dff","#ff6b00","#00ffaa","#ff0044"];
-
+/* ============ helpers ============ */
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 const ri=(n)=>Math.floor(Math.random()*n);
-function phrase(){return (rnd(A)+" "+rnd(B)).toUpperCase();}
-function caption(){return {hook:rnd(HOOK),tags:"#"+rnd(A)+" #"+rnd(B).replace(/ /g,'')+" #fyp #brainrot #viral #foryou",handle:rnd(HANDLES)};}
+const chance=p=>Math.random()<p;
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-/* ============ PHOTO — TWO-HOST RACE for reliability ============
-   Loads Picsum + LoremFlickr simultaneously; first to load wins and fades in.
-   If BOTH fail, the animated CSS bg underneath stays. Each gets unique seed so no caching collisions. */
-let photoN=0;
-function picsum(seed){ return 'https://picsum.photos/seed/'+encodeURIComponent('sc'+seed)+'/720/1280.jpg'; }
-function flickr(seed){ return 'https://loremflickr.com/720/1280?lock='+seed; }
-function attachPhoto(postEl, seed){
-  const img=document.createElement('img');
-  img.className='photo ken'; img.alt=''; img.decoding='async';
-  let settled=false;
-  img.onload=function(){ if(settled)return; settled=true; img.classList.add('on'); };
-  img.onerror=function(){
-    if(settled)return;
-    if(!img.dataset.fb){ img.dataset.fb=1; img.src=flickr(seed+7777); } // one-shot fallback
-    else { img.remove(); } // give up; CSS bg shows
-  };
-  img.src=picsum(seed);
-  // race: also prime an alt host; whichever the browser resolves first via onload wins
-  // (kept simple+safe: single <img>, fallback chain — proven pattern, no detached probes)
-  postEl.insertBefore(img, postEl.firstChild.nextSibling);
+/* ============ TOPIC SYSTEM ============ */
+const TOPICS={
+  food:{noun:"this recipe",subj:"the food",verb:"made",emoji:"🍝",cap:["i cannot stop thinking about this","made this at 2am no regrets","the perfect bite doesn't exi—","ok this might be my villain origin meal","tell me why i'm hungry again already"]},
+  gym:{noun:"this workout",subj:"the grind",verb:"hit",emoji:"💪",cap:["day 47 of locking in","no days off (except yesterday)","the pump is unreal today","leg day got me walking funny ngl","we go gym 🦍"]},
+  pet:{noun:"this lil guy",subj:"the cat",verb:"posted",emoji:"🐈",cap:["he runs this household now","the audacity of this creature","i work to provide for him","tell me he's not the main character","caught him mid crime"]},
+  fit:{noun:"this fit",subj:"the outfit",verb:"wore",emoji:"🧥",cap:["fit check before i lose the nerve","thrifted the whole thing btw","rate it 1-10 be honest","felt cute might delete","the drip was immaculate today"]},
+  hack:{noun:"this hack",subj:"the trick",verb:"tried",emoji:"🧠",cap:["why did nobody tell me this","game changer fr","wish i knew this years ago","trust me on this one","this broke my brain a little"]},
+  drama:{noun:"this situation",subj:"the drama",verb:"exposed",emoji:"👀",cap:["so anyway here's what happened","i'm not okay after this","you guys are gonna LOSE it","grab a snack this is long","i have receipts"]},
+  satisfy:{noun:"this",subj:"the satisfying part",verb:"filmed",emoji:"🌀",cap:["watch the whole thing trust","my brain went quiet for 30 seconds","this fixed something in me","sound on for this one","could watch forever"]},
+  hot_take:{noun:"this take",subj:"the opinion",verb:"said",emoji:"🔥",cap:["unpopular opinion incoming","say it louder for the back","i said what i said","this'll get me cancelled but","hear me out"]}
+};
+const TOPIC_KEYS=Object.keys(TOPICS);
+
+/* top-level comments per topic */
+const TOP={
+  food:["bro the {n} looks insane 😭","saving this immediately","ok but who's gonna cook it for me","my mouth is watering rn fr","made {n} last night can confirm it slaps","this is illegal to post when i'm hungry","recipe?? 🙏","nah this is restaurant quality"],
+  gym:["the gains gonna be CRAZY","bro is locked in 💪","this motivated me to skip the gym","W discipline ngl","what's the rep range","ok now do it without preworkout","saving for monday (it won't happen)","he's built different"],
+  pet:["i would die for {n} 😭","the little BEANS","not me making a noise out loud","he KNOWS he's the main character","ok the ears???","too pure for this app","adopting a cat now because of this","protect at all costs 🫡"],
+  fit:["the {n} is actually clean ngl","where's it from 👀","ok SERVING","i could never pull this off","colors go so hard","fit check passed proceed","giving exactly what it needs to give","unc could never"],
+  hack:["wait does {n} actually work","trying this rn brb","why did nobody tell me sooner","genius or disaster no in between","tried it. mixed. still W","life = changed","skeptical but intrigued","saving and never doing it"],
+  drama:["NOT {s} 💀","ok spill the WHOLE thing","i need a 40 min video essay","why can't i look away","the audacity is insane","🍿🍿🍿","this is gonna be an arc","praying for everyone (lying)"],
+  satisfy:["the way my brain just relaxed","felt that in my SOUL","why is {n} so satisfying help","play this at my funeral","the asmr is unmatched","watched 11 times","this fixed my dopamine","needed this today fr"],
+  hot_take:["bro really {v} that out loud 💀","controversial but kinda real","absolutely not (you're a little right)","the confidence to post this","disagree but respect the bravery","this'll start a war below","unc opinion detected","ratio incoming but ok"]
+};
+const REPLY={
+  agree:["real","this exactly 🙏","said what i was thinking","fr fr","100%","couldn't have said it better","based","yes someone gets it"],
+  argue:["nah you're reaching","hard disagree lol","this you? 💀","respectfully no","ok unc","that's crazy work ngl","be so for real"],
+  joke:["bro got a TED talk in the replies","why'd you say it like a villain","not the essay 😭","calm down professor","ok shakespeare","the dedication to type all that"],
+  relate:["literally me","this is so my situation","why did i feel attacked","get out of my head","felt this one","calling me out in someone's comments"],
+  ratio:["+ ratio","🤓☝️","didn't ask","L take","cope","wrong"]
+};
+const NAMES=["xX_voidwalker_Xx","brittany_no_h","ohioan_prime","just_some_guy","404namenotfound","grimace_survivor","ur_local_npc","sigmamale_2007","not_a_bot_fr","gigachad_jr","lilbro_lore","aura_points_only","certified_unc","skibidi_scientist","deluluqueen","ratio_dispenser","caffeine_demon","copium_addict_99","mewing_maxxer","npc_number_4"];
+const CM_AVCOL=["#ff2d78","#39ff14","#ffd400","#00e5ff","#a64dff","#ff6b00","#00ffaa","#ff0044"];
+
+/* feed-meta generators */
+const HANDLES=["@sigma_grindset","@npc_andy_09","@ohio_final_boss","@certified_yapper","@brainrot_daily","@gyatt_enjoyer","@unc_status","@delulu_solulu","@aura_farmer","@cooked_ngl","@menace2soc","@goated_takes"];
+const A=["sigma","rizz","ohio","skibidi","aura","delulu","goated","based","menace","unc","cooked"];
+const EMO=["💀","🔥","😭","🗿","🤡","👁️","🥶","🧠","🫠","😈","💅","🐐","🤓","😵‍💫","🥵","🤯"];
+const COLORS=["#ff2d78","#39ff14","#ffd400","#00e5ff","#a64dff","#ff6b00","#ff0044","#00ffaa"];
+
+/* tabloid / hacks / trends (parody) */
+const CELEB=["BRAYDEN STORMZ","KAYLEIGH MAXX","CHAD THUNDERVEIN","DJ AURAFARM","LIL UNCANNY","MIKAYLA VORTEX","BRONSON PEAKE","SAVANNAH GLAZE","ZADDY MCFINANCE","PRINCESS DELULU","RIVER SIGMASON","BLAZE GYATTLEY","TRENT RIZZLER","BAMBI SKIBIDISON"];
+const TAB_KICK=["EXCLUSIVE","SHOCKING","YOU WON'T BELIEVE","BREAKING","LEAKED","INSIDERS SAY","CAUGHT ON CAM","SOURCES CONFIRM","UNHINGED","JUST IN"];
+const TAB_VERB=["spotted","caught","seen","filmed","exposed","reportedly","allegedly"];
+const TAB_DOING=["buying 47 grimace shakes at 3am","crying into dry cereal","mewing in the produce aisle","fighting a Roomba","renaming their cat 'the algorithm'","ordering a large 6 times at one drive-thru","staring at a wall for 'aura reasons'","teaching pigeons to scroll","caught NOT touching grass"];
+const TAB_SUB=["fans are LOSING it","the internet is in shambles","experts are baffled","nobody saw this coming","the comments are unhinged","it's giving final boss"];
+const HACKS=[
+  {t:"This ONE trick instantly fixes your aura",s:["Stare at the ceiling for 4 seconds","Whisper 'sigma' under your breath","Refuse to explain why","Walk away in slow motion"],m:"💡 +400 aura guaranteed"},
+  {t:"Sleep hack doctors HATE",s:["Get in bed at a reasonable hour","Pick up phone 'for one second'","It is now 4am","Repeat nightly"],m:"💡 works every time"},
+  {t:"Glow up in 5 seconds no cap",s:["Lower phone brightness","Tilt head 12 degrees","Squint slightly","Believe"],m:"💡 you are now THAT guy/girl"},
+  {t:"Become a morning person instantly",s:["Set 14 alarms","Snooze all 14","Wake at noon refreshed","Tell everyone you 'love mornings'"],m:"💡 nailed it"},
+  {t:"Genius money hack they hide from you",s:["Open banking app","Stare at the number","Close app","It's now someone else's problem"],m:"💡 financial freedom unlocked"}
+];
+const TREND_LAB=["TRENDING #1","CERTIFIED VIRAL","THE NEW WAVE","#1 ON FYP","BREAKING THE ALGORITHM","EVERYONE'S DOING IT"];
+const TREND_NAME=["DRIPCORE","GLOOMscroll","HYPERAURA","FERALcore","goblinmaxxing","SIGMAwave","VAPORDOOM","BRAINROTcore","LIMINALrizz","DOPAMINEcore"];
+const TREND_STAT=["+9,400% this week","2.3B views and climbing","scientists can't explain it","up 12,000% since this morning","the FYP is 90% this now"];
+
+function fill(t,topic){ return t.replace("{n}",topic.noun).replace("{s}",topic.subj).replace("{v}",topic.verb); }
+
+/* ============ COHERENT THREAD ENGINE ============ */
+function genThread(topicKey){
+  const topic=TOPICS[topicKey]; const tops=TOP[topicKey];
+  const n=5+ri(8); const thread=[]; const used=new Set();
+  function pickName(){ let nm,g=0; do{nm=rnd(NAMES);g++;}while(used.has(nm)&&g<5); used.add(nm); return nm; }
+  for(let i=0;i<n;i++){
+    const c={user:pickName(),verif:chance(.12),time:(1+ri(58))+(chance(.5)?'m':'h'),text:fill(rnd(tops),topic),likes:ri(12000),liked:false,replies:[]};
+    if(chance(.45)){
+      const stances=chance(.5)?["agree","relate","joke"]:["argue","ratio","joke"];
+      // build a unique pool of candidate reply texts from the chosen stances, shuffle, draw
+      let pool=[];
+      stances.forEach(st=>{ REPLY[st].forEach(txt=>pool.push(txt)); });
+      for(let z=pool.length-1;z>0;z--){ const w=ri(z+1); const tmp=pool[z]; pool[z]=pool[w]; pool[w]=tmp; }
+      const rc=Math.min(1+ri(3), pool.length);
+      for(let r=0;r<rc;r++){
+        c.replies.push({user:pickName(),verif:chance(.05),time:(1+ri(40))+'m',text:pool[r],likes:ri(1500),liked:false});
+      }
+    }
+    thread.push(c);
+  }
+  thread.sort((a,b)=>b.likes-a.likes);
+  return thread;
 }
+
+/* ============ PHOTO: thumbnail in feed, full-res on tap ============
+   Docs-correct format: picsum.photos/W/H?random=N  (random param prevents cache collisions).
+   Stable per-post id so thumb & full match. One-shot fallback to placehold.co, then satisfying canvas underneath. */
+let photoN=0;
+function picThumb(id){ return 'https://picsum.photos/id/'+id+'/360/640.jpg'; }
+function picFull(id){ return 'https://picsum.photos/id/'+id+'/720/1280.jpg'; }
+function placeholdFallback(){ return 'https://placehold.co/360x640/151522/ff2d78?text=SCROLLZ'; }
+function attachPhoto(postEl, picId){
+  const img=document.createElement('img');
+  img.className='photo ken'; img.alt=''; img.decoding='async'; img.loading='eager';
+  let settled=false;
+  img.onload=function(){ if(!settled){ settled=true; img.classList.add('on'); } };
+  img.onerror=function(){
+    if(settled) return;
+    if(!img.dataset.fb){ img.dataset.fb=1; img.src=placeholdFallback(); }
+    else { img.remove(); }   // give up; canvas visual shows
+  };
+  img.src=picThumb(picId);
+  postEl.dataset.full=picFull(picId);   // remember full-res for tap-to-expand
+  postEl.appendChild(img);              // sits above canvas (z-index)
+}
+
+/* ============ SATISFYING CANVAS VISUALS (on-device, always work) ============ */
+const liveCanvases=new Set();
+function makeSatCanvas(post,kind,col1,col2){
+  const cv=document.createElement('canvas');
+  cv.className='satcanvas'; cv.width=180; cv.height=320;  // small buffer, scaled by CSS = cheap
+  post.insertBefore(cv,post.firstChild);
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  const c1=hexRGB(col1), c2=hexRGB(col2);
+  let t=ri(1000);
+  const state={cv,ctx,kind,W,H,c1,c2,t,running:true};
+  cv._draw=function(){
+    if(!state.running) return;
+    state.t+=0.03;
+    if(kind==='plasma') drawPlasma(state);
+    else if(kind==='slime') drawSlime(state);
+    else drawFlow(state);
+  };
+  liveCanvases.add(cv);
+  return cv;
+}
+function hexRGB(h){ h=h.replace('#',''); return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)]; }
+function drawPlasma(s){
+  const {ctx,W,H,c1,c2}=s; const t=s.t;
+  const img=ctx.createImageData(W,H); const d=img.data;
+  for(let y=0;y<H;y+=2){ for(let x=0;x<W;x+=2){
+    const v=(Math.sin(x/18+t)+Math.sin(y/14+t*1.1)+Math.sin((x+y)/22+t)+Math.sin(Math.hypot(x-W/2,y-H/2)/20-t))/4;
+    const m=(v+1)/2;
+    const r=c1[0]*m+c2[0]*(1-m), g=c1[1]*m+c2[1]*(1-m), b=c1[2]*m+c2[2]*(1-m);
+    for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++){ const i=((y+dy)*W+(x+dx))*4; d[i]=r; d[i+1]=g; d[i+2]=b; d[i+3]=255; }
+  }}
+  ctx.putImageData(img,0,0);
+}
+function drawSlime(s){
+  const {ctx,W,H,c1,c2}=s; const t=s.t;
+  ctx.fillStyle='rgb('+(c2[0]*0.25|0)+','+(c2[1]*0.25|0)+','+(c2[2]*0.25|0)+')'; ctx.fillRect(0,0,W,H);
+  for(let i=0;i<7;i++){
+    const cx=W/2+Math.sin(t*0.8+i*1.3)*W*0.32;
+    const cy=H/2+Math.cos(t*0.6+i*1.7)*H*0.34;
+    const r=28+Math.sin(t+i)*16;
+    const g=ctx.createRadialGradient(cx,cy,2,cx,cy,r);
+    const m=(Math.sin(t+i)+1)/2;
+    g.addColorStop(0,'rgba('+(c1[0]*m+c2[0]*(1-m)|0)+','+(c1[1]*m+c2[1]*(1-m)|0)+','+(c1[2]*m+c2[2]*(1-m)|0)+',0.9)');
+    g.addColorStop(1,'rgba('+c2[0]+','+c2[1]+','+c2[2]+',0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.fill();
+  }
+}
+function drawFlow(s){
+  const {ctx,W,H,c1,c2}=s; const t=s.t;
+  for(let y=0;y<H;y+=4){
+    const m=(Math.sin(y/30+t)+1)/2;
+    ctx.fillStyle='rgb('+(c1[0]*m+c2[0]*(1-m)|0)+','+(c1[1]*m+c2[1]*(1-m)|0)+','+(c1[2]*m+c2[2]*(1-m)|0)+')';
+    const off=Math.sin(y/24+t*1.4)*10;
+    ctx.fillRect(off,y,W,5);
+  }
+}
+/* single rAF loop drives all visible canvases (perf) */
+function tickCanvases(){ liveCanvases.forEach(cv=>{ if(cv.isConnected && cv._draw) cv._draw(); else liveCanvases.delete(cv); }); requestAnimationFrame(tickCanvases); }
+requestAnimationFrame(tickCanvases);
 
 /* ============ state ============ */
 let coins=0, streak=1, secs=0, postsSeen=0, combo=0, lastLikeTime=0;
@@ -285,106 +391,114 @@ const coinsEl=document.getElementById('coins');
 const streakEl=document.getElementById('streak');
 const guiltEl=document.getElementById('guilt');
 const shopBal=document.getElementById('shopBal');
-
-setInterval(()=>{
-  secs++; let m=Math.floor(secs/60), s=secs%60;
-  guiltEl.textContent=m+":"+(s<10?'0':'')+s;
-  if(secs>0 && secs%30===0){ milestone(); }
-},1000);
-
+setInterval(()=>{ secs++; let m=Math.floor(secs/60),s=secs%60; guiltEl.textContent=m+":"+(s<10?'0':'')+s; if(secs>0&&secs%30===0){ milestone(); } },1000);
 function bump(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
 function addCoins(n){ coins+=n; coinsEl.textContent=coins.toLocaleString(); if(shopBal)shopBal.textContent=coins.toLocaleString(); bump(document.getElementById('coinsB')); SFX.coin(); }
 
-/* ============ comments model ============ */
+/* ============ comments store ============ */
 const commentStore={};
 let postCounter=0;
-function genComments(){
-  const n=6+ri(10); const list=[];
-  for(let i=0;i<n;i++){
-    const replies=[];
-    if(ri(3)===0){ const rc=1+ri(2); for(let r=0;r<rc;r++){ replies.push({user:rnd(CM_USERS),text:rnd(CM_REPLY),time:(1+ri(58))+'m',likes:ri(400),liked:false}); } }
-    list.push({user:rnd(CM_USERS),verif:ri(6)===0,time:(1+ri(59))+(ri(2)?'m':'h'),text:rnd(CM_TEXT),likes:ri(9000),liked:false,replies:replies});
-  }
-  list.sort((a,b)=>b.likes-a.likes);
-  return list;
-}
 
 /* ============ build a post ============ */
 function makePost(){
   const p=document.createElement('div'); p.className='post';
   const pid='p'+(postCounter++); p.dataset.pid=pid;
-  commentStore[pid]=genComments();
+  const topicKey=rnd(TOPIC_KEYS); const topic=TOPICS[topicKey];
+  p.dataset.topic=topicKey;
+  commentStore[pid]=genThread(topicKey);
 
-  const c=caption(); const col1=rnd(COLORS), col2=rnd(COLORS), col3=rnd(COLORS);
-  const seed=(photoN++)+ri(900);
+  const col1=rnd(COLORS), col2=rnd(COLORS);
+  const handle=rnd(HANDLES);
+  const cap=rnd(topic.cap);
+  const tags="#"+topicKey+" #"+rnd(A)+" #fyp #foryou #viral";
 
-  // CSS background ALWAYS first child
-  let bgClass='cssbg ', bgStyle='';
-  const k=ri(3);
-  if(k===0){ bgClass+='mesh'; bgStyle='background:radial-gradient(circle at 20% 30%,'+col1+'cc,transparent 45%),radial-gradient(circle at 80% 70%,'+col2+'cc,transparent 45%),radial-gradient(circle at 50% 90%,'+col3+'aa,transparent 50%),#08080f;'; }
-  else if(k===1){ bgClass+='spin'; bgStyle='background:conic-gradient(from 0deg at 50% 50%,'+col1+','+col2+','+col3+','+col1+');'; }
-  else { bgClass+='rays'; bgStyle='background:repeating-conic-gradient(from 0deg at 50% 50%,'+col1+' 0 12deg,'+col2+' 12deg 24deg);'; }
-  let inner='<div class="'+bgClass+'" style="'+bgStyle+'"></div>';
-  // placeholder anchor so attachPhoto inserts after bg
-  inner+='<div class="vidlayer"><div class="blob" style="background:'+col1+';top:-10%;left:-10%"></div><div class="blob" style="background:'+col3+';bottom:-10%;right:-10%;animation-delay:-4.5s"></div></div>';
-  inner+='<div class="scanline"></div>';
+  // decide layout: photo OR satisfying canvas OR card overlay
+  const roll=ri(100); let kind;
+  if(roll<40) kind='photo';
+  else if(roll<58) kind='satisfy';
+  else if(roll<72) kind='tabloid';
+  else if(roll<84) kind='hack';
+  else kind='trend';
 
-  // CONTENT TYPE — weighted mix of chaos
-  const roll=ri(100);
-  let kind;
-  if(roll<28) kind='photo';
-  else if(roll<46) kind='tabloid';
-  else if(roll<62) kind='hack';
-  else if(roll<76) kind='trend';
-  else if(roll<88) kind='mega';
-  else kind='emoji';
+  // base satisfying canvas under everything (also the photo-fail floor)
+  const satKind=rnd(['plasma','slime','flow']);
+  makeSatCanvas(p,satKind,col1,col2);
 
-  let wantsPhoto=false;
-  if(kind==='photo'){ wantsPhoto=true; if(ri(3)===0) inner+='<div class="emoji" style="font-size:clamp(46px,16vw,110px)">'+rnd(EMO)+'</div>'; }
+  let overlay='';
+  let wantsPhoto=false, picId=0;
+  if(kind==='photo'){ wantsPhoto=true; }
+  else if(kind==='satisfy'){
+    overlay+='<div class="trendcard" style="top:auto;bottom:160px"><span class="lab">😌 ODDLY SATISFYING</span></div>';
+  }
   else if(kind==='tabloid'){
-    wantsPhoto=Math.random()<.5;
-    const celeb=rnd(CELEB);
-    inner+='<div class="tabloid"><span class="kicker">'+rnd(TAB_KICK)+'</span>'+
-      '<div class="head"><em>'+esc(celeb)+'</em> '+rnd(TAB_VERB)+' '+esc(rnd(TAB_DOING))+'</div>'+
-      '<div class="sub">'+rnd(TAB_SUB)+' '+rnd(EMO)+'</div></div>';
+    wantsPhoto=chance(.4);
+    overlay+='<div class="tabloid"><span class="kicker">'+rnd(TAB_KICK)+'</span><div class="head"><em>'+esc(rnd(CELEB))+'</em> '+rnd(TAB_VERB)+' '+esc(rnd(TAB_DOING))+'</div><div class="sub">'+rnd(TAB_SUB)+' '+rnd(EMO)+'</div></div>';
   }
   else if(kind==='hack'){
-    const h=rnd(HACKS);
-    let steps=''; h.s.forEach(function(st){ steps+='<li>'+esc(st)+'</li>'; });
-    inner+='<div class="hackcard"><span class="badge2">🧠 LIFE HACK</span><h3>'+esc(h.t)+'</h3><ol>'+steps+'</ol><div class="mind">'+esc(h.m)+'</div></div>';
+    const h=rnd(HACKS); let steps=''; h.s.forEach(st=>steps+='<li>'+esc(st)+'</li>');
+    overlay+='<div class="hackcard"><span class="badge2">🧠 LIFE HACK</span><h3>'+esc(h.t)+'</h3><ol>'+steps+'</ol><div class="mind">'+esc(h.m)+'</div></div>';
   }
-  else if(kind==='trend'){
-    wantsPhoto=Math.random()<.4;
-    inner+='<div class="trendcard"><span class="lab">'+rnd(TREND_LAB)+'</span><div class="big">'+esc(rnd(TREND_NAME))+'</div><div class="stat">'+esc(rnd(TREND_STAT))+'</div></div>';
+  else {
+    overlay+='<div class="trendcard"><span class="lab">'+rnd(TREND_LAB)+'</span><div class="big">'+esc(rnd(TREND_NAME))+'</div><div class="stat">'+esc(rnd(TREND_STAT))+'</div></div>';
   }
-  else if(kind==='mega'){ inner+='<div class="megaword" style="color:#fff;-webkit-text-stroke:2px '+col1+'">'+phrase()+'</div>'; }
-  else { inner+='<div class="emoji">'+rnd(EMO)+rnd(EMO)+'</div>'; }
 
+  if(wantsPhoto){ picId=10+ri(1000); }   // valid Picsum id range (0-1084)
+
+  let inner='';
+  inner+='<div class="vidlayer"><div class="blob" style="background:'+col1+';top:-10%;left:-10%"></div><div class="blob" style="background:'+col2+';bottom:-10%;right:-10%;animation-delay:-4.5s"></div></div>';
+  inner+='<div class="scanline"></div>';
+  inner+=overlay;
+  if(wantsPhoto){ inner+='<div class="expandHint">🔍 tap to expand</div>'; }
   inner+='<div class="vignette"></div><div class="grain"></div>';
 
   const likeN=(ri(900)+50)+"."+ri(9)+"K";
   const cmN=(commentStore[pid].length+ri(900))+"";
   const shareN=ri(900)+"";
   inner+='<div class="progress">'+'<div class="seg"><div class="fill"></div></div>'.repeat(5)+'</div>';
-  inner+='<div class="caption"><div class="handle">'+esc(c.handle)+' · <b>Follow</b></div><div>'+esc(c.hook)+' '+rnd(EMO)+'</div><div class="tags">'+esc(c.tags)+'</div></div>';
+  inner+='<div class="caption"><div class="handle">'+esc(handle)+' · <b>Follow</b></div><div>'+esc(cap)+' '+topic.emoji+'</div><div class="tags">'+esc(tags)+'</div></div>';
   inner+='<div class="rail">'+
     '<div class="rbtn likeBtn"><div class="ricon">🤍</div><span class="likeCount">'+likeN+'</span></div>'+
     '<div class="rbtn cmBtn"><div class="ricon">💬</div><span>'+cmN+'</span></div>'+
     '<div class="rbtn shareBtn"><div class="ricon">🔁</div><span>'+shareN+'</span></div>'+
     '<div class="rbtn"><div class="ricon shimmer">⭐</div><span>Save</span></div>'+
   '</div>';
-  p.innerHTML=inner;
+  // append after canvas (canvas is firstChild)
+  const wrap=document.createElement('div'); wrap.style.cssText='position:absolute;inset:0;'; wrap.innerHTML=inner;
+  while(wrap.firstChild){ p.appendChild(wrap.firstChild); }
   feed.appendChild(p);
 
-  if(wantsPhoto){ attachPhoto(p, seed); }
+  if(wantsPhoto){ attachPhoto(p, picId); }
 
   let lastTap=0;
-  p.addEventListener('pointerup',e=>{ const now=Date.now(); if(now-lastTap<300){ doLike(p,e.clientX,e.clientY); } lastTap=now; });
+  p.addEventListener('pointerup',e=>{
+    const now=Date.now();
+    if(now-lastTap<300){
+      // double-tap: if photo, expand; else like
+      if(p.dataset.full && e.target.classList.contains('photo')){ openViewer(p.dataset.full); }
+      else { doLike(p,e.clientX,e.clientY); }
+    }
+    lastTap=now;
+  });
+  // single tap on the photo opens fullscreen
+  p.addEventListener('click',e=>{
+    if(e.target.classList && e.target.classList.contains('photo') && p.dataset.full){ openViewer(p.dataset.full); }
+  });
   p.querySelector('.likeBtn').addEventListener('click',e=>{e.stopPropagation();const r=p.getBoundingClientRect();doLike(p,r.right-40,r.bottom-200);});
   p.querySelector('.shareBtn').addEventListener('click',e=>{e.stopPropagation();fakeShare();});
   p.querySelector('.cmBtn').addEventListener('click',e=>{e.stopPropagation();openComments(pid);});
   return p;
 }
+
+/* ============ fullscreen viewer ============ */
+const viewer=document.getElementById('viewer'), vImg=document.getElementById('vImg'), vLoad=viewer.querySelector('.vload');
+function openViewer(url){
+  vImg.style.display='none'; vLoad.style.display='block'; viewer.style.display='flex';
+  vImg.onload=function(){ vLoad.style.display='none'; vImg.style.display='block'; };
+  vImg.onerror=function(){ vLoad.textContent='couldn\'t load full image'; };
+  vImg.src=url; SFX.pop(); buzz(12);
+}
+document.getElementById('vClose').addEventListener('click',()=>{ viewer.style.display='none'; vImg.src=''; SFX.swoosh(); });
+viewer.addEventListener('click',e=>{ if(e.target===viewer){ viewer.style.display='none'; vImg.src=''; } });
 
 /* ============ like + combo ============ */
 function doLike(post,x,y){
@@ -419,34 +533,26 @@ function confetti(){
 function buzz(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
 
 /* ============ toasts ============ */
-const NOTIF=["🔥 your streak is on fire! don't lose it","❤️ @sigma_andy liked your vibe","👀 247 people are watching this right now","💎 you're SO close to 500 gems","🏆 top 3% of scrollers today","😱 someone stole your leaderboard spot","⚡ 2x gems for the next 60 seconds!","🎁 a mystery reward is waiting below","📈 your aura just went up","🚨 don't stop now you're on a roll","💅 BRAYDEN STORMZ just followed you (fake)","📰 NEW tabloid drop below 👀"];
+const NOTIF=["🔥 your streak is on fire!","❤️ @sigma_andy liked your vibe","👀 247 people watching this rn","💎 SO close to 500 gems","🏆 top 3% of scrollers today","😱 someone stole your spot","⚡ 2x gems next 60 seconds!","🎁 mystery reward below","📈 your aura just went up","📰 NEW tabloid drop below 👀"];
 function toast(txt){
   const t=document.getElementById('toast'); document.getElementById('toastText').textContent=txt;
   t.style.transform='translateY(0)'; buzz(15); SFX.tick();
   clearTimeout(t._t); t._t=setTimeout(()=>{t.style.transform='translateY(-140px)';},2600);
 }
 setInterval(()=>{ if(Math.random()<.7) toast(rnd(NOTIF)); }, 7000);
-
-function milestone(){
-  streak++; streakEl.textContent=streak; bump(document.getElementById('streakB'));
-  burst('🔥 '+streak, 'STREAK! KEEP GOING'); buzz([20,40,20,40]); SFX.jackpot(); addCoins(25);
-}
+function milestone(){ streak++; streakEl.textContent=streak; bump(document.getElementById('streakB')); burst('🔥 '+streak,'STREAK! KEEP GOING'); buzz([20,40,20,40]); SFX.jackpot(); addCoins(25); }
 function fakeShare(){ toast("📤 shared! +10 gems"); addCoins(10); buzz(30); SFX.swoosh(); }
 
-/* ============ COMMENTS sheet ============ */
+/* ============ COMMENTS ============ */
 const commentsEl=document.getElementById('comments');
 const cmList=document.getElementById('cmList');
 const cmCount=document.getElementById('cmCount');
 const cmInput=document.getElementById('cmInput');
 let activePid=null;
 function renderComments(pid){
-  const list=commentStore[pid]||[];
-  cmCount.textContent=list.length+' comments';
+  const list=commentStore[pid]||[]; cmCount.textContent=list.length+' comments';
   let h='';
-  list.forEach((c,i)=>{
-    h+=commentHTML(c,i,false,'');
-    if(c.replies && c.replies.length){ h+='<div class="cmReply">'; c.replies.forEach((r,j)=>{ h+=commentHTML(r,i,true,j); }); h+='</div>'; }
-  });
+  list.forEach((c,i)=>{ h+=commentHTML(c,i,false,''); if(c.replies&&c.replies.length){ h+='<div class="cmReply">'; c.replies.forEach((r,j)=>{ h+=commentHTML(r,i,true,j); }); h+='</div>'; } });
   cmList.innerHTML=h;
 }
 function commentHTML(c,i,isReply,j){
@@ -476,8 +582,7 @@ cmList.addEventListener('click',e=>{
   } else if(b.dataset.act==='cmreply'){ cmInput.focus(); }
 });
 function postComment(){
-  if(!activePid)return;
-  const v=cmInput.value.trim(); if(!v)return;
+  if(!activePid)return; const v=cmInput.value.trim(); if(!v)return;
   commentStore[activePid].unshift({user:'you',verif:false,time:'now',text:v,likes:0,liked:false,replies:[]});
   cmInput.value=''; renderComments(activePid); cmList.scrollTop=0;
   addCoins(5); SFX.coin(); buzz(15); toast("💬 posted! +5 gems");
@@ -508,18 +613,14 @@ observeAll();
 /* ============ pull-to-refresh slot ============ */
 let startY=0, pulling=false; const pull=document.getElementById('pull');
 feed.addEventListener('touchstart',function(e){ if(feed.scrollTop<=0){startY=e.touches[0].clientY;pulling=true;} },{passive:true});
-feed.addEventListener('touchmove',function(e){
-  if(!pulling)return; let dy=e.touches[0].clientY-startY;
-  if(dy>0){ pull.style.transform='translateY('+(Math.min(dy*.5,90)-80)+'px)'; }
-},{passive:true});
+feed.addEventListener('touchmove',function(e){ if(!pulling)return; let dy=e.touches[0].clientY-startY; if(dy>0){ pull.style.transform='translateY('+(Math.min(dy*.5,90)-80)+'px)'; } },{passive:true});
 feed.addEventListener('touchend',function(){
   if(!pulling)return; pulling=false;
   let m=pull.style.transform.match(/-?\d+/); let dy=(m?parseFloat(m[0]):-80)+80;
   if(dy>40){ slot(); } pull.style.transform='translateY(-80px)';
 });
 function slot(){
-  const reels=["🍒","💎","🔔","7️⃣","🍀","⭐","🧠"]; let n=0;
-  burst('🎰','SPINNING...');
+  const reels=["🍒","💎","🔔","7️⃣","🍀","⭐","🧠"]; let n=0; burst('🎰','SPINNING...');
   const iv=setInterval(function(){
     document.getElementById('burstBig').textContent=rnd(reels)+rnd(reels)+rnd(reels); buzz(8); SFX.tick(); n++;
     if(n>10){ clearInterval(iv);
@@ -541,33 +642,22 @@ document.getElementById('shopClose').addEventListener('click',function(){ shop.s
     const g=parseInt(b.dataset.gems,10);
     addCoins(g); SFX.buy(); confetti();
     burst('+'+g.toLocaleString()+' 💎','FAKE PURCHASE! (free)');
-    toast("💎 "+g.toLocaleString()+" gems added — $0.00 charged");
-    buzz([20,40,20]);
+    toast("💎 "+g.toLocaleString()+" gems added — $0.00 charged"); buzz([20,40,20]);
   });
 });
 let spinning=false, wheelAngle=0;
 document.getElementById('spinWheel').addEventListener('click',function(){
   if(spinning)return; spinning=true;
-  const wheel=document.getElementById('wheel');
-  const prizes=[50,100,250,500,1000,25]; const idx=ri(6);
-  wheelAngle+=360*5 + idx*60 + 30; wheel.style.transform='rotate('+wheelAngle+'deg)';
+  const wheel=document.getElementById('wheel'); const prizes=[50,100,250,500,1000,25]; const idx=ri(6);
+  wheelAngle+=360*5+idx*60+30; wheel.style.transform='rotate('+wheelAngle+'deg)';
   const tickIv=setInterval(function(){SFX.tick();},120);
-  setTimeout(function(){
-    clearInterval(tickIv); spinning=false;
-    const prize=prizes[idx]; addCoins(prize); SFX.jackpot(); confetti();
-    burst('+'+prize+' 💎','WHEEL PRIZE! 🎡'); buzz([20,40,20,40]);
-  },4100);
+  setTimeout(function(){ clearInterval(tickIv); spinning=false; const prize=prizes[idx]; addCoins(prize); SFX.jackpot(); confetti(); burst('+'+prize+' 💎','WHEEL PRIZE! 🎡'); buzz([20,40,20,40]); },4100);
 });
 
 /* ============ gate ============ */
 document.getElementById('go').addEventListener('click',function(){
-  document.getElementById('gate').style.display='none';
-  initAudio();
-  try{
-    SFX.jackpot(); buzz([30,50,30]);
-    toast("🔥 welcome! your brain missed this");
-    setTimeout(function(){burst('+50','WELCOME BONUS');},400); addCoins(50);
-  }catch(err){ console.log('fx skip',err); }
+  document.getElementById('gate').style.display='none'; initAudio();
+  try{ SFX.jackpot(); buzz([30,50,30]); toast("🔥 welcome! your brain missed this"); setTimeout(function(){burst('+50','WELCOME BONUS');},400); addCoins(50); }catch(err){ console.log('fx skip',err); }
 });
 document.addEventListener('pointerdown',initAudio,{passive:true});
 </script>
