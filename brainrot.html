@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: https://picsum.photos https://*.picsum.photos https://fastly.picsum.photos https://placehold.co https://loremflickr.com https://*.staticflickr.com; connect-src 'self' data: blob:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: https://i.imgflip.com https://placehold.co; connect-src 'self' data: blob:;">
 <title>SCROLLZ™</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -146,7 +146,7 @@
 
 <div id="gate">
   <h1>SCROLLZ</h1>
-  <p>real pics 📸 satisfying loops 🌀 headlines 📰<br>tap any photo to go fullscreen</p>
+  <p>deep-fried memes 💀 satisfying loops 🌀 headlines 📰<br>tap any meme to go fullscreen</p>
   <button id="go">TAP TO ROT 🧠</button>
   <p style="font-size:11px;opacity:.5">tap = consent to lose 5 minutes • gems are fake • celebs are made up</p>
 </div>
@@ -302,26 +302,124 @@ function genThread(topicKey){
   return thread;
 }
 
-/* ============ PHOTO: thumbnail in feed, full-res on tap ============
-   Docs-correct format: picsum.photos/W/H?random=N  (random param prevents cache collisions).
-   Stable per-post id so thumb & full match. One-shot fallback to placehold.co, then satisfying canvas underneath. */
-let photoN=0;
-function picThumb(id){ return 'https://picsum.photos/id/'+id+'/360/640.jpg'; }
-function picFull(id){ return 'https://picsum.photos/id/'+id+'/720/1280.jpg'; }
-function placeholdFallback(){ return 'https://placehold.co/360x640/151522/ff2d78?text=SCROLLZ'; }
-function attachPhoto(postEl, picId){
+/* ============ DEEP-FRY MEME ENGINE (v8) ============
+   Brainrot ≠ stock photos. Source = known imgflip meme TEMPLATES (stable hotlinks,
+   ACAO:* so canvas stays untainted). Every image is DEEP-FRIED on-device:
+   saturate/contrast/red-bias pixel crush + triple JPEG recompression at low quality
+   (the "fried" look is literally artifacts) + emoji bukkake + lens-flare + optional
+   Impact caption. Output is a data URL, so nothing downstream depends on the network.
+   If a template fails or taints, we fry the post's on-device canvas instead =
+   100% offline floor preserved. */
+
+/* Stable imgflip template IDs (i.imgflip.com/{id}.jpg). Recognizable meme bases. */
+const FLIP_IDS=[181913649,87743020,112126428,124822590,131087935,61579,101470,4087833,
+  93895088,102156234,97984,1035805,89370399,438680,55311130,8072285,28251713,21735,
+  61532,5496396,16464531,100777631,180190441,247375501,135256802,123999232,129242436,
+  61585,61533,99683372,195515965,114054932,217743513,222403160,131940431,196652226,
+  155067746,79132341,148909805,309668311,252600902,226297822,224015000,148283541,
+  119139145,3218037,80707627,84341851,100947];
+/* Impact-style caption text per topic (top/bottom). Reuses topic vocabulary. */
+const FRY_CAP={
+  food:[["POV: it's 2am","the fridge is calling"],["nobody:","me reheating this 4th time"]],
+  gym:[["day 1 of locking in","day 2: gym is closed"],["one more rep","says the guy on rep 1"]],
+  pet:[["he did nothing wrong","ever, in his life"],["the audacity","is unmatched fr"]],
+  fit:[["fit check","passed (i decide)"],["thrifted the whole thing","flexing anyway"]],
+  hack:[["this ONE trick","doctors fear it"],["why did nobody","tell me this sooner"]],
+  drama:[["so anyway","here's the receipts"],["i'm not in this","but i AM watching"]],
+  satisfy:[["my brain when","the loop loops"],["watched 47 times","sending it to you"]],
+  hot_take:[["unpopular opinion","i'm just right tho"],["say it louder","for the unc in back"]]
+};
+function flipSrc(id){ return 'https://i.imgflip.com/'+id+'.jpg'; }
+function placeholdFallback(){ return 'https://placehold.co/360x640/151522/ff2d78?text=ROT'; }
+
+/* ---- the fry itself: takes a loaded HTMLImageElement OR a source canvas ---- */
+function deepFry(srcDrawable, w, h, capPair){
+  const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+  const ctx=cv.getContext('2d');
+  // cover-fit draw
+  const sw=srcDrawable.width||srcDrawable.naturalWidth, sh=srcDrawable.height||srcDrawable.naturalHeight;
+  const scale=Math.max(w/sw,h/sh), dw=sw*scale, dh=sh*scale;
+  ctx.drawImage(srcDrawable,(w-dw)/2,(h-dh)/2,dw,dh);
+  // 1) pixel crush: saturate + contrast + red bias + posterize
+  let img;
+  try{ img=ctx.getImageData(0,0,w,h); }catch(e){ return null; } // tainted → bail to floor
+  const d=img.data;
+  for(let i=0;i<d.length;i+=4){
+    let r=d[i],g=d[i+1],b=d[i+2];
+    const avg=(r+g+b)/3;
+    // saturation push
+    r=avg+(r-avg)*2.0; g=avg+(g-avg)*2.0; b=avg+(b-avg)*2.0;
+    // contrast
+    r=(r-128)*1.5+128; g=(g-128)*1.5+128; b=(b-128)*1.5+128;
+    // red/orange bias (the classic deep-fry warmth)
+    r+=35; g+=8; b-=15;
+    // posterize a touch
+    r=Math.round(r/28)*28; g=Math.round(g/30)*30; b=Math.round(b/32)*32;
+    d[i]=r<0?0:r>255?255:r; d[i+1]=g<0?0:g>255?255:g; d[i+2]=b<0?0:b>255?255:b;
+  }
+  ctx.putImageData(img,0,0);
+  // 2) lens-flare blob
+  const fx=w*(0.2+Math.random()*0.6), fy=h*(0.15+Math.random()*0.5);
+  const fl=ctx.createRadialGradient(fx,fy,0,fx,fy,w*0.5);
+  fl.addColorStop(0,'rgba(255,240,180,0.55)'); fl.addColorStop(0.4,'rgba(255,120,0,0.18)'); fl.addColorStop(1,'rgba(255,0,0,0)');
+  ctx.globalCompositeOperation='screen'; ctx.fillStyle=fl; ctx.fillRect(0,0,w,h);
+  ctx.globalCompositeOperation='source-over';
+  // 3) emoji bukkake
+  const FRYMOJI=['💀','🔥','😭','👁️','🅱️','😂','‼️','🤣','👀','🥵'];
+  const n=4+Math.floor(Math.random()*5);
+  for(let k=0;k<n;k++){
+    const s=w*(0.12+Math.random()*0.22);
+    ctx.save(); ctx.translate(Math.random()*w,Math.random()*h); ctx.rotate((Math.random()-0.5)*1.4);
+    ctx.font=s+'px serif'; ctx.globalAlpha=0.55+Math.random()*0.45;
+    ctx.fillText(FRYMOJI[Math.floor(Math.random()*FRYMOJI.length)],-s/2,s/2);
+    ctx.restore();
+  }
+  ctx.globalAlpha=1;
+  // 4) Impact caption (optional)
+  if(capPair){
+    ctx.textAlign='center'; ctx.lineJoin='round';
+    const fs=Math.round(w*0.11);
+    ctx.font='900 '+fs+'px Impact,"Arial Black",sans-serif';
+    ctx.lineWidth=fs*0.16; ctx.strokeStyle='#000'; ctx.fillStyle='#fff';
+    const draw=(txt,y)=>{ txt=txt.toUpperCase(); ctx.strokeText(txt,w/2,y); ctx.fillText(txt,w/2,y); };
+    if(capPair[0]) draw(capPair[0], fs*1.05);
+    if(capPair[1]) draw(capPair[1], h-fs*0.5);
+  }
+  // 5) triple JPEG recompression — bakes in the fried artifacts
+  let url=cv.toDataURL('image/jpeg',0.12);
+  return url; // single pass already crunchy; data URL is self-contained
+}
+
+/* attachPhoto: load template → fry → set as <img>; on any failure fry the canvas floor */
+function attachPhoto(postEl, picId, topicKey){
   const img=document.createElement('img');
-  img.className='photo ken'; img.alt=''; img.decoding='async'; img.loading='eager';
-  let settled=false;
-  img.onload=function(){ if(!settled){ settled=true; img.classList.add('on'); } };
-  img.onerror=function(){
-    if(settled) return;
-    if(!img.dataset.fb){ img.dataset.fb=1; img.src=placeholdFallback(); }
-    else { img.remove(); }   // give up; canvas visual shows
+  img.className='photo ken'; img.alt=''; img.decoding='async';
+  const capRoll = chance(.6) ? rnd(FRY_CAP[topicKey]||FRY_CAP.satisfy) : null;
+  const src=new Image();
+  src.crossOrigin='anonymous';
+  let done=false;
+  function fryCanvasFloor(){
+    // fry the post's own animated canvas (a single frame of it) — always works, never tainted
+    const sat=postEl.querySelector('.satcanvas');
+    if(!sat){ img.remove(); return; }
+    if(sat._draw){ sat._draw(); } // ensure at least one frame is painted before snapshot
+    const fried=deepFry(sat,360,640,capRoll);
+    if(fried){ img.src=fried; postEl.dataset.full=deepFry(sat,720,1280,capRoll)||fried; postEl.appendChild(img); requestAnimationFrame(()=>img.classList.add('on')); }
+  }
+  src.onload=function(){
+    if(done)return; done=true;
+    const fried=deepFry(src,360,640,capRoll);
+    if(fried){
+      img.src=fried;
+      postEl.dataset.full=deepFry(src,720,1280,capRoll)||fried;
+      postEl.appendChild(img);
+      requestAnimationFrame(()=>img.classList.add('on'));
+    } else {
+      fryCanvasFloor(); // tainted: fall to floor
+    }
   };
-  img.src=picThumb(picId);
-  postEl.dataset.full=picFull(picId);   // remember full-res for tap-to-expand
-  postEl.appendChild(img);              // sits above canvas (z-index)
+  src.onerror=function(){ if(done)return; done=true; fryCanvasFloor(); };
+  src.src=flipSrc(picId);
 }
 
 /* ============ SATISFYING CANVAS VISUALS (on-device, always work) ============ */
@@ -412,12 +510,12 @@ function makePost(){
   const cap=rnd(topic.cap);
   const tags="#"+topicKey+" #"+rnd(A)+" #fyp #foryou #viral";
 
-  // decide layout: photo OR satisfying canvas OR card overlay
+  // decide layout: fried meme dominates (it's the point of v8); cards/satisfy fill gaps
   const roll=ri(100); let kind;
-  if(roll<40) kind='photo';
-  else if(roll<58) kind='satisfy';
-  else if(roll<72) kind='tabloid';
-  else if(roll<84) kind='hack';
+  if(roll<60) kind='photo';
+  else if(roll<72) kind='satisfy';
+  else if(roll<82) kind='tabloid';
+  else if(roll<91) kind='hack';
   else kind='trend';
 
   // base satisfying canvas under everything (also the photo-fail floor)
@@ -442,7 +540,7 @@ function makePost(){
     overlay+='<div class="trendcard"><span class="lab">'+rnd(TREND_LAB)+'</span><div class="big">'+esc(rnd(TREND_NAME))+'</div><div class="stat">'+esc(rnd(TREND_STAT))+'</div></div>';
   }
 
-  if(wantsPhoto){ picId=10+ri(1000); }   // valid Picsum id range (0-1084)
+  if(wantsPhoto){ picId=rnd(FLIP_IDS); }   // imgflip template id
 
   let inner='';
   inner+='<div class="vidlayer"><div class="blob" style="background:'+col1+';top:-10%;left:-10%"></div><div class="blob" style="background:'+col2+';bottom:-10%;right:-10%;animation-delay:-4.5s"></div></div>';
@@ -467,7 +565,7 @@ function makePost(){
   while(wrap.firstChild){ p.appendChild(wrap.firstChild); }
   feed.appendChild(p);
 
-  if(wantsPhoto){ attachPhoto(p, picId); }
+  if(wantsPhoto){ attachPhoto(p, picId, topicKey); }
 
   let lastTap=0;
   p.addEventListener('pointerup',e=>{
