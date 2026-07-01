@@ -389,7 +389,9 @@ const REPLY={
   relate:["ok but this is literally me too","why did i feel personally attacked","get out of my head please","felt this one in my spine","calling me out in someone else's comments is wild","adding this to my personality"],
   ratio:["+ ratio","🤓☝️ well actually","didn't ask but ok","L + you fell off","the cope is strong","this comment is so brave (wrong)"],
   ask:["wait how does that even work","genuinely asking, is it worth it","ok but does it actually though","link?? need it","explain like i'm 5 please","real question who has time for this"],
-  answer:["yeah it actually holds up ngl","tried it, can confirm, mid but works","no it's a trap don't do it 😭","10/10 would recommend to my worst enemy","surprisingly yes, i was shook too","depends how cooked you already are"]
+  answer:["yeah it actually holds up ngl","tried it, can confirm, mid but works","no it's a trap don't do it 😭","10/10 would recommend to my worst enemy","surprisingly yes, i was shook too","depends how cooked you already are"],
+  hype:["this ate and left NO crumbs 😤","ok you understood the assignment","W comment no notes","the aura on this reply is insane","screaming this is so real 😭","not you being so right for this","goated take honestly","this healed something in me fr"],
+  wholesome:["ok this is actually so sweet 🥹","we don't deserve this comment","reading this made my day lowkey","proud of you random stranger 🫶","the internet needs more of this","saving this to feel better later"]
 };
 const NAMES=["xX_voidwalker_Xx","brittany_no_h","ohioan_prime","just_some_guy","404namenotfound","grimace_survivor","ur_local_npc","sigmamale_2007","not_a_bot_fr","gigachad_jr","lilbro_lore","aura_points_only","certified_unc","skibidi_scientist","deluluqueen","ratio_dispenser","caffeine_demon","copium_addict_99","mewing_maxxer","npc_number_4"];
 const CM_AVCOL=["#ff2d78","#39ff14","#ffd400","#00e5ff","#a64dff","#ff6b00","#00ffaa","#ff0044"];
@@ -627,7 +629,7 @@ function genThread(topicKey, meme){
       buildFlameWar(c, pickName);
     } else if(chance(.5)){
       // a normal little exchange where the replies actually respond
-      const shapes=[["agree","joke"],["argue","ratio"],["relate","agree"],["ask","answer"],["joke","argue"]];
+      const shapes=[["agree","joke"],["argue","ratio"],["relate","agree"],["ask","answer"],["joke","argue"],["hype","relate"],["wholesome","agree"],["hype","joke"]];
       const [sa,sb]=rnd(shapes);
       const pool=uniq(REPLY[sa].concat(REPLY[sb]), 1+ri(3));
       pool.forEach(txt=>{ c.replies.push({user:pickName(),verif:chance(.05),time:(1+ri(40))+'m',text:txt,likes:ri(1800),liked:false,opLiked:chance(.1)}); });
@@ -723,14 +725,18 @@ function attachPhoto(postEl, meme){
   if(cap[1]) capHTML+='<div class="memecap bot'+mk+'">'+tx(cap[1])+'</div>';
   im.addEventListener('load',()=>{
     bg.classList.add('on'); im.classList.add('on');
-    // for the user's OWN photo: look at it and rebuild the convo to talk about it
-    if(meme.user){
+    // for the user's OWN photo: look at it ONCE and rebuild the convo to match it.
+    // meme.analyzed guards re-running on restore so the saved convo is kept.
+    if(meme.user && !meme.analyzed){
+      meme.analyzed=true;
       const traits=analyzePic(im);
-      if(traits.length){
+      const pid=postEl.dataset.pid;
+      if(traits.length && !meme.concept){
         meme.traits=traits;
-        const pid=postEl.dataset.pid;
         if(pid && commentStore[pid]) commentStore[pid]=genThread(postEl.dataset.topic||'meme', meme);
       }
+      const sp=(typeof specByPid!=='undefined')&&specByPid[pid];
+      if(sp){ sp.thread=commentStore[pid]; if(typeof saveFeed==='function') saveFeed(); }
     }
   });
   im.addEventListener('error',()=>{ wrap.remove(); }); // fall back to the canvas floor
@@ -791,6 +797,7 @@ async function aiAnalyzePost(pid){
     if(concept){
       commentStore[pid]=genThread(post.dataset.topic||'meme',{user:true,concept:concept});
       if(activePid===pid){ renderComments(pid); }
+      const sp=specByPid[pid]; if(sp){ if(sp.meme){ sp.meme.concept=concept; sp.meme.analyzed=true; } sp.thread=commentStore[pid]; saveFeed(); }
       toast("🧠 read your pic — it's giving "+concept);
     }
   }catch(e){ _clipFailed=true; }
@@ -1020,122 +1027,85 @@ function renderLiked(){
 function openLiked(){ renderLiked(); document.getElementById('liked').style.display='flex'; SFX.open(); }
 updateLikedBadge();
 
-/* ============ build a post ============ */
-function makePost(force){
-  const p=document.createElement('div'); p.className='post';
-  const pid='p'+(postCounter++); p.dataset.pid=pid;
+/* ============ feed persistence ============
+   Posts + their comment threads are saved so the feed does NOT regenerate on every
+   open — reopening restores the same pictures and the same conversations. */
+let feedSpecs=[]; try{ feedSpecs=JSON.parse(localStorage.getItem('scrollz_feed')||'[]'); }catch(e){ feedSpecs=[]; }
+const specByPid={}; const FEED_CAP=45; let _feedSaveT=null;
+feedSpecs=feedSpecs.slice(-FEED_CAP);
+function saveFeed(){ clearTimeout(_feedSaveT); _feedSaveT=setTimeout(function(){
+  try{ localStorage.setItem('scrollz_feed', JSON.stringify(feedSpecs.slice(-FEED_CAP))); }
+  catch(e){ try{ feedSpecs=feedSpecs.slice(-18); localStorage.setItem('scrollz_feed', JSON.stringify(feedSpecs)); }catch(e2){} }
+}, 500); }
 
-  // decide layout FIRST so caption / tags / comments can all cohere with it
+/* build a fresh post spec — captures every random choice so it can be re-rendered later */
+function genSpec(force){
+  const pid='p'+(postCounter++);
   const roll=ri(100); let kind;
-  if(roll<56) kind='photo';
-  else if(roll<68) kind='game';       // sped-up minecraft-style gameplay filler
-  else if(roll<78) kind='satisfy';
-  else if(roll<86) kind='tabloid';
-  else if(roll<93) kind='hack';
-  else kind='trend';
-
-  // if the user loaded their own photos, weave them into the feed's photo slots
-  // (force!=null pins a specific photo — used to surface just-added pics up top)
+  if(roll<56) kind='photo'; else if(roll<68) kind='game'; else if(roll<78) kind='satisfy';
+  else if(roll<86) kind='tabloid'; else if(roll<93) kind='hack'; else kind='trend';
   let userPic=null;
   if(force!=null){ kind='photo'; userPic=force; }
-  else if(userPicIds.length && (kind==='photo' ? chance(.6) : chance(.22))){ kind='photo'; userPic=rnd(userPicIds); }
-
-  // pick the actual picture up front so the whole post — caption AND the comment
-  // thread — can be generated to react to THIS specific meme/photo.
-  const meme = kind==='photo' ? (userPic!=null ? {name:'your photo',cap:null,user:true,picId:userPic} : pickMeme()) : null;
-
-  // topic drives non-photo captions/threads; photo posts get a thread about the pic,
-  // satisfy posts stay on-theme so the caption/convo match the visual.
-  const topicKey = kind==='photo' ? 'meme' : kind==='satisfy' ? 'satisfy' : kind==='game' ? 'game' : rnd(TOPIC_KEYS);
+  else if(userPicIds.length && (kind==='photo'?chance(.6):chance(.22))){ kind='photo'; userPic=rnd(userPicIds); }
+  const meme = kind==='photo' ? (userPic!=null?{name:'your photo',cap:null,user:true,picId:userPic}:pickMeme()) : null;
+  const topicKey = kind==='photo'?'meme':kind==='satisfy'?'satisfy':kind==='game'?'game':rnd(TOPIC_KEYS);
   const topic=TOPICS[topicKey];
-  p.dataset.topic=topicKey;
-  commentStore[pid]=genThread(topicKey, meme);
+  const thread=genThread(topicKey, meme);
+  const pal=rnd(PALETTES), col1=pal[0], col2=pal[1];
+  const handle = userPic!=null?"@you":kind==='game'?rnd(GAME_HANDLES):kind==='photo'?rnd(MEME_HANDLES):rnd(HANDLES);
+  const cap = userPic!=null?rnd(MYPIC_CAPS):rnd(topic.cap);
+  const tags = userPic!=null?"#mypics #real #memories #core #fyp":kind==='photo'?"#meme #relatable #real #fyp #foryou":"#"+topicKey+" #"+rnd(A)+" #fyp #foryou #viral";
+  let satKind, overlay='';
+  if(kind==='satisfy'){ const st=rnd(SAT_THEMES); satKind=st.kind; overlay='<div class="trendcard" style="top:auto;bottom:160px"><span class="lab">'+esc(st.lab)+'</span></div>'; }
+  else if(kind==='game'){ satKind='blocks'; overlay='<div class="trendcard" style="top:auto;bottom:150px"><span class="lab">⛏ SPED-UP GAMEPLAY · 2×</span></div>'; }
+  else { satKind=rnd(['plasma','slime','flow']);
+    if(kind==='tabloid') overlay='<div class="tabloid"><span class="kicker">'+rnd(TAB_KICK)+'</span><div class="head"><em>'+esc(rnd(CELEB))+'</em> '+rnd(TAB_VERB)+' '+esc(rnd(TAB_DOING))+'</div><div class="sub">'+rnd(TAB_SUB)+' '+rnd(EMO)+'</div></div>';
+    else if(kind==='hack'){ const h=rnd(HACKS); let steps=''; h.s.forEach(function(st){steps+='<li>'+esc(st)+'</li>';}); overlay='<div class="hackcard"><span class="badge2">🧠 LIFE HACK</span><h3>'+esc(h.t)+'</h3><ol>'+steps+'</ol><div class="mind">'+esc(h.m)+'</div></div>'; }
+    else if(kind==='trend') overlay='<div class="trendcard"><span class="lab">'+rnd(TREND_LAB)+'</span><div class="big">'+esc(rnd(TREND_NAME))+'</div><div class="stat">'+esc(rnd(TREND_STAT))+'</div></div>';
+  }
+  return {pid,kind,topicKey,emoji:(topic.emoji||'📱'),col1,col2,handle,cap,tags,satKind,overlay,meme,thread,
+    likeN:(ri(900)+50)+"."+ri(9)+"K", cmN:(thread.length+ri(900))+"", shareN:ri(900)+"", userLiked:false, userSaved:false};
+}
 
-  // harmonious color pair for blobs + canvas (no more clashing randoms)
-  const pal=rnd(PALETTES); const col1=pal[0], col2=pal[1];
-  const handle = userPic!=null ? "@you" : kind==='game' ? rnd(GAME_HANDLES) : kind==='photo' ? rnd(MEME_HANDLES) : rnd(HANDLES);
-  const cap = userPic!=null ? rnd(MYPIC_CAPS) : rnd(topic.cap);
-  const tags = userPic!=null ? "#mypics #real #memories #core #fyp"
-             : kind==='photo' ? "#meme #relatable #real #fyp #foryou"
-             : "#"+topicKey+" #"+rnd(A)+" #fyp #foryou #viral";
-  p.dataset.handle=handle; p.dataset.cap=cap; p.dataset.emoji=(topic.emoji||'📱');
-
-  // base satisfying canvas under everything (also the photo-fail floor).
-  // 'satisfy' posts use a themed loop so the visual reads as an actual thing.
-  let satTheme=null, satKind;
-  if(kind==='satisfy'){ satTheme=rnd(SAT_THEMES); satKind=satTheme.kind; }
-  else if(kind==='game'){ satKind='blocks'; }
-  else { satKind=rnd(['plasma','slime','flow']); }
-  makeSatCanvas(p,satKind,col1,col2);
-
-  let overlay='';
-  if(kind==='satisfy'){
-    overlay+='<div class="trendcard" style="top:auto;bottom:160px"><span class="lab">'+esc(satTheme.lab)+'</span></div>';
-  }
-  else if(kind==='game'){
-    overlay+='<div class="trendcard" style="top:auto;bottom:150px"><span class="lab">⛏ SPED-UP GAMEPLAY · 2×</span></div>';
-  }
-  else if(kind==='tabloid'){
-    overlay+='<div class="tabloid"><span class="kicker">'+rnd(TAB_KICK)+'</span><div class="head"><em>'+esc(rnd(CELEB))+'</em> '+rnd(TAB_VERB)+' '+esc(rnd(TAB_DOING))+'</div><div class="sub">'+rnd(TAB_SUB)+' '+rnd(EMO)+'</div></div>';
-  }
-  else if(kind==='hack'){
-    const h=rnd(HACKS); let steps=''; h.s.forEach(st=>steps+='<li>'+esc(st)+'</li>');
-    overlay+='<div class="hackcard"><span class="badge2">🧠 LIFE HACK</span><h3>'+esc(h.t)+'</h3><ol>'+steps+'</ol><div class="mind">'+esc(h.m)+'</div></div>';
-  }
-  else if(kind==='trend'){
-    overlay+='<div class="trendcard"><span class="lab">'+rnd(TREND_LAB)+'</span><div class="big">'+esc(rnd(TREND_NAME))+'</div><div class="stat">'+esc(rnd(TREND_STAT))+'</div></div>';
-  }
-  // kind==='photo' intentionally has no card overlay — the meme/photo IS the content
-
+/* render a post from a spec (new one, or a restored one) */
+function makePost(force, spec){
+  const isNew=!spec; if(isNew) spec=genSpec(force);
+  const pid=spec.pid;
+  postCounter=Math.max(postCounter,(parseInt(pid.slice(1),10)||0)+1);
+  commentStore[pid]=spec.thread; specByPid[pid]=spec;
+  const p=document.createElement('div'); p.className='post'; p.dataset.pid=pid;
+  p.dataset.topic=spec.topicKey; p.dataset.handle=spec.handle; p.dataset.cap=spec.cap; p.dataset.emoji=spec.emoji;
+  makeSatCanvas(p, spec.satKind, spec.col1, spec.col2);
   let inner='';
-  // game posts skip the color blobs so the pixel gameplay stays crisp
-  if(kind!=='game'){
-    inner+='<div class="vidlayer"><div class="blob" style="background:'+col1+';top:-10%;left:-10%"></div><div class="blob" style="background:'+col2+';bottom:-10%;right:-10%;animation-delay:-4.5s"></div></div>';
-    inner+='<div class="scanline"></div>';
-  }
-  inner+=overlay;
-  if(meme){ inner+='<div class="expandHint">🔍 tap to expand</div>'; }
+  if(spec.kind!=='game'){ inner+='<div class="vidlayer"><div class="blob" style="background:'+spec.col1+';top:-10%;left:-10%"></div><div class="blob" style="background:'+spec.col2+';bottom:-10%;right:-10%;animation-delay:-4.5s"></div></div><div class="scanline"></div>'; }
+  inner+=spec.overlay;
+  if(spec.meme){ inner+='<div class="expandHint">🔍 tap to expand</div>'; }
   inner+='<div class="vignette"></div><div class="grain"></div>';
-
-  const likeN=(ri(900)+50)+"."+ri(9)+"K";
-  const cmN=(commentStore[pid].length+ri(900))+"";
-  const shareN=ri(900)+"";
   inner+='<div class="progress">'+'<div class="seg"><div class="fill"></div></div>'.repeat(5)+'</div>';
-  inner+='<div class="caption"><div class="handle">'+esc(handle)+' · <b>Follow</b></div><div>'+esc(cap)+' '+topic.emoji+'</div><div class="tags">'+esc(tags)+'</div></div>';
+  inner+='<div class="caption"><div class="handle">'+esc(spec.handle)+' · <b>Follow</b></div><div>'+esc(spec.cap)+' '+spec.emoji+'</div><div class="tags">'+esc(spec.tags)+'</div></div>';
   inner+='<div class="rail">'+
-    '<div class="rbtn likeBtn"><div class="ricon">🤍</div><span class="likeCount">'+likeN+'</span></div>'+
-    '<div class="rbtn cmBtn"><div class="ricon">💬</div><span>'+cmN+'</span></div>'+
-    '<div class="rbtn shareBtn"><div class="ricon">🔁</div><span>'+shareN+'</span></div>'+
+    '<div class="rbtn likeBtn"><div class="ricon">🤍</div><span class="likeCount">'+spec.likeN+'</span></div>'+
+    '<div class="rbtn cmBtn"><div class="ricon">💬</div><span>'+spec.cmN+'</span></div>'+
+    '<div class="rbtn shareBtn"><div class="ricon">🔁</div><span>'+spec.shareN+'</span></div>'+
     '<div class="rbtn"><div class="ricon shimmer">⭐</div><span>Save</span></div>'+
   '</div>';
-  // append after canvas (canvas is firstChild)
   const wrap=document.createElement('div'); wrap.style.cssText='position:absolute;inset:0;'; wrap.innerHTML=inner;
   while(wrap.firstChild){ p.appendChild(wrap.firstChild); }
   feed.appendChild(p);
-
-  if(meme){ attachPhoto(p, meme); }
-
+  if(spec.meme){ attachPhoto(p, spec.meme); }
+  if(spec.userLiked){ const lb=p.querySelector('.likeBtn'); lb.classList.add('liked'); lb.querySelector('.ricon').textContent='❤️'; }
+  if(spec.userSaved){ const sb=p.querySelector('.rail .rbtn:last-child'); if(sb) sb.classList.add('liked'); }
   let lastTap=0;
-  p.addEventListener('pointerup',e=>{
-    const now=Date.now();
-    if(now-lastTap<300){
-      // double-tap: if photo, expand; else like
-      if(p.dataset.full && e.target.classList.contains('photo')){ openViewer(p.dataset.full); }
-      else { doLike(p,e.clientX,e.clientY); }
-    }
-    lastTap=now;
-  });
-  // single tap on the photo opens fullscreen
-  p.addEventListener('click',e=>{
-    if(e.target.classList && e.target.classList.contains('photo') && p.dataset.full){ openViewer(p.dataset.full); }
-  });
-  p.querySelector('.likeBtn').addEventListener('click',e=>{e.stopPropagation();const r=p.getBoundingClientRect();doLike(p,r.right-40,r.bottom-200);});
-  p.querySelector('.shareBtn').addEventListener('click',e=>{e.stopPropagation();fakeShare();});
-  p.querySelector('.cmBtn').addEventListener('click',e=>{e.stopPropagation();openComments(pid);});
+  p.addEventListener('pointerup',function(e){ const now=Date.now(); if(now-lastTap<300){ if(p.dataset.full && e.target.classList.contains('photo')){ openViewer(p.dataset.full); } else { doLike(p,e.clientX,e.clientY); } } lastTap=now; });
+  p.addEventListener('click',function(e){ if(e.target.classList && e.target.classList.contains('photo') && p.dataset.full){ openViewer(p.dataset.full); } });
+  p.querySelector('.likeBtn').addEventListener('click',function(e){e.stopPropagation();const r=p.getBoundingClientRect();doLike(p,r.right-40,r.bottom-200);});
+  p.querySelector('.shareBtn').addEventListener('click',function(e){e.stopPropagation();fakeShare();});
+  p.querySelector('.cmBtn').addEventListener('click',function(e){e.stopPropagation();openComments(pid);});
   const saveBtn=p.querySelector('.rail .rbtn:last-child');
-  if(saveBtn) saveBtn.addEventListener('click',e=>{e.stopPropagation();
-    if(!saveBtn.classList.contains('liked')){ saveBtn.classList.add('liked'); addLiked({kind:'saved', pid:pid, title:'⭐ '+(p.dataset.handle||'a post'), text:p.dataset.cap||''}); toast("⭐ saved! find it in ❤️"); SFX.coin(); buzz(12); pushTicker('⭐ you saved a post'); addJackpot(3); }
+  if(saveBtn) saveBtn.addEventListener('click',function(e){e.stopPropagation();
+    if(!saveBtn.classList.contains('liked')){ saveBtn.classList.add('liked'); const sp=specByPid[pid]; if(sp){sp.userSaved=true; saveFeed();} addLiked({kind:'saved', pid:pid, title:'⭐ '+(p.dataset.handle||'a post'), text:p.dataset.cap||''}); toast("⭐ saved! find it in ❤️"); SFX.coin(); buzz(12); pushTicker('⭐ you saved a post'); addJackpot(3); }
   });
+  if(isNew){ feedSpecs.push(spec); if(feedSpecs.length>FEED_CAP) feedSpecs.shift(); saveFeed(); }
   return p;
 }
 
@@ -1156,6 +1126,7 @@ function doLike(post,x,y){
   if(!btn.classList.contains('liked')){
     btn.classList.add('liked'); btn.querySelector('.ricon').textContent='❤️';
     addLiked({kind:'post', pid:post.dataset.pid, title:(post.dataset.emoji||'')+' '+(post.dataset.handle||'a post'), text:post.dataset.cap||''});
+    const sp=specByPid[post.dataset.pid]; if(sp){ sp.userLiked=true; saveFeed(); }
     pushTicker('❤️ you liked '+(post.dataset.handle||'a post')); addJackpot(2);
   }
   buzz(20); SFX.like();
@@ -1284,6 +1255,7 @@ cmList.addEventListener('click',e=>{
     const pc=document.querySelector('.post[data-pid="'+activePid+'"]');
     if(obj.liked){ addLiked({kind:'comment', pid:activePid, title:'💬 '+esc(obj.user)+' — on '+((pc&&pc.dataset.handle)||'a post'), text:obj.text}); }
     else { removeLiked('comment', activePid, obj.text); }
+    saveFeed();
     SFX.like(); buzz(10);
   } else if(b.dataset.act==='cmreply'){ cmInput.focus(); }
 });
@@ -1293,7 +1265,7 @@ function postComment(){
   commentStore[activePid].unshift(uc);
   cmInput.value=''; renderComments(activePid); cmList.scrollTop=0;
   SFX.send(); addCoins(5); buzz(15); toast("💬 posted! +5 gems");
-  pushTicker('💬 you posted a comment (brave)'); addJackpot(5);
+  pushTicker('💬 you posted a comment (brave)'); addJackpot(5); saveFeed();
   botsRespondTo(activePid, uc);
 }
 /* the internet reacts to YOUR comment: unhinged takes, then a flame war erupts,
@@ -1315,6 +1287,7 @@ function botsRespondTo(pid, uc){
     uc.likes+=ri(3);
     if(activePid===pid) renderComments(pid);
     if(soundOn) SFX.tick();
+    saveFeed();
   }, d); d+=650+ri(1100); });
   setTimeout(()=>{ toast("👀 people are replying to your comment"); buzz(15); }, 900);
 }
@@ -1323,7 +1296,9 @@ cmInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ postComment(); } })
 
 /* ============ infinite feed ============ */
 function grow(n){ n=n||6; for(let i=0;i<n;i++){ makePost(); } }
-grow(8);
+// restore the saved feed (same pictures + same conversations); else start fresh
+if(feedSpecs.length){ feedSpecs.slice(-FEED_CAP).forEach(function(s){ try{ makePost(null, s); }catch(e){} }); if(feed.children.length<6) grow(8-feed.children.length); }
+else { grow(8); }
 const obs=new IntersectionObserver(function(es){
   es.forEach(function(e){
     if(e.isIntersecting){
@@ -1442,7 +1417,7 @@ const GATE_TAGS=[
 /* ============ PWA: install + keep the home-screen app on the newest version ============
    The service worker is NETWORK-FIRST, so every online launch pulls the latest build
    and only falls back to cache when offline — the app can't get stuck on an old version. */
-const APP_VERSION='v17';
+const APP_VERSION='v18';
 (function(){ const v=document.getElementById('verTag'); if(v) v.textContent='SCROLLZ '+APP_VERSION; })();
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
