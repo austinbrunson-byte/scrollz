@@ -42,10 +42,11 @@
   .photobg.on{opacity:1;}
   .photo.meme{object-fit:contain; z-index:1;}
   .memecap{position:absolute; left:0; right:0; z-index:3; text-align:center; padding:0 14px; font-family:Impact,"Arial Black",Haettenschweiler,sans-serif; font-weight:900; text-transform:uppercase; color:#fff; line-height:1.02; letter-spacing:.5px; -webkit-text-stroke:1.5px #000; text-shadow:0 3px 0 #000,2px 2px 0 #000,0 0 12px #000; word-wrap:break-word; pointer-events:none;}
+  .memecap.mock{text-transform:none;}
   .memecap.top{top:calc(62px + env(safe-area-inset-top)); font-size:clamp(21px,7vw,38px);}
   .memecap.bot{bottom:184px; font-size:clamp(21px,7vw,38px);}
   .satcanvas{position:absolute; inset:0; width:100%; height:100%; z-index:0; object-fit:cover;}
-  .expandHint{position:absolute; top:calc(80px + env(safe-area-inset-top)); right:10px; z-index:7; background:#000a; border:1px solid #ffffff33; border-radius:999px; padding:5px 11px; font-size:12px; font-weight:800; color:#fff; pointer-events:none; opacity:.85;}
+  .expandHint{position:absolute; top:calc(96px + env(safe-area-inset-top)); right:10px; z-index:7; background:#000a; border:1px solid #ffffff33; border-radius:999px; padding:5px 11px; font-size:12px; font-weight:800; color:#fff; pointer-events:none; opacity:.85;}
 
   .vidlayer{position:absolute; inset:0; mix-blend-mode:screen; opacity:.42; z-index:2; pointer-events:none;}
   .blob{position:absolute; width:60vw; height:60vw; border-radius:50%; filter:blur(45px); animation:drift 10s ease-in-out infinite;}
@@ -190,9 +191,12 @@
 
   /* ===== casino-mode ambient stimuli ===== */
   #ticker{position:fixed; top:50px; left:0; right:0; height:22px; z-index:45; background:linear-gradient(90deg,#170a12,#0a0f18); border-bottom:1px solid #ffffff14; overflow:hidden; white-space:nowrap; pointer-events:none;}
-  #ticker .run{display:inline-block; white-space:nowrap; font-size:12px; font-weight:800; color:var(--gold); padding-left:100%; animation:crawl 24s linear infinite; line-height:22px;}
+  #ticker .run{display:inline-block; white-space:nowrap; font-size:12px; font-weight:800; color:var(--gold); padding-left:100%; animation:crawl 16s linear infinite; line-height:22px;}
   @keyframes crawl{to{transform:translateX(-100%)}}
-  #live{position:fixed; top:78px; left:8px; z-index:45; display:none; align-items:center; gap:5px; background:#000b; border:1px solid var(--hot); border-radius:999px; padding:3px 9px; font-size:11px; font-weight:900; color:#fff; pointer-events:none;}
+  #jackbar{position:fixed; top:72px; left:0; right:0; height:16px; z-index:45; background:#0c0c16; border-bottom:1px solid #ffffff14; overflow:hidden;}
+  #jackfill{position:absolute; inset:0; width:0%; background:linear-gradient(90deg,var(--hot),var(--gold),var(--acid)); background-size:200% 100%; animation:shim 2s linear infinite; transition:width .4s ease; box-shadow:0 0 12px var(--gold);}
+  #jacklabel{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#fff; text-shadow:0 1px 2px #000; letter-spacing:1px;}
+  #live{position:fixed; top:94px; left:8px; z-index:45; display:none; align-items:center; gap:5px; background:#000b; border:1px solid var(--hot); border-radius:999px; padding:3px 9px; font-size:11px; font-weight:900; color:#fff; pointer-events:none;}
   #live .dot{width:7px; height:7px; border-radius:50%; background:var(--hot); animation:blink 1s steps(2,end) infinite;}
   @keyframes blink{50%{opacity:.15}}
   .winPop{position:fixed; left:8px; bottom:180px; z-index:55; background:linear-gradient(90deg,#1c1233,#2a1424); border:1px solid var(--gold); border-radius:12px; padding:8px 12px; font-size:12px; font-weight:800; color:#fff; box-shadow:0 6px 24px #000a; transform:translateX(-125%); transition:transform .45s cubic-bezier(.2,1.5,.3,1); max-width:74vw; pointer-events:none;}
@@ -226,6 +230,7 @@
 </div>
 
 <div id="ticker"><div class="run" id="tickerRun"></div></div>
+<div id="jackbar"><div id="jackfill"></div><span id="jacklabel">🎰 JACKPOT 0%</span></div>
 <div id="live"><span class="dot"></span>LIVE · <span id="liveN" data-n="12483">12,483</span> watching</div>
 
 <div id="pull">🎰</div>
@@ -361,12 +366,12 @@ const TOPICS={
 const TOPIC_KEYS=Object.keys(TOPICS);
 /* 'meme' is added AFTER TOPIC_KEYS so it's only ever used by photo/meme posts,
    never picked at random for a card post. */
-TOPICS.meme={noun:"this meme",subj:"the meme",verb:"posted",emoji:"💀",cap:["tag someone 💀","why is this so accurate","no because this is literally me","every single time 😭","who made this 😭","the accuracy is scary"]};
+TOPICS.meme={noun:"this meme",subj:"the meme",verb:"posted",emoji:"💀",cap:["tag an npc 💀","why is this so me it's scary","chat is this real","it's giving my whole life","every single time no cap 😭","who cooked this 💀"]};
 TOPICS.game={noun:"this gameplay",subj:"the run",verb:"clipped",emoji:"🎮",cap:["no thoughts, just blocks 🧱","2x speed hits different","the parkour is actually clean","brainrot fuel right here","watch till the jump","peak background gameplay fr"]};
 
 /* top-level comments per topic */
 const TOP={
-  meme:["ok who gave them permission to post this about me specifically 😭","the caption is doing SO much heavy lifting","i did not consent to being this seen today","sending this to the group chat immediately","this is a documentary about my life","not me reading this at 3am while doing the exact thing","the algorithm really said 'here's your reflection'","bold of them to expose me like this for free","screenshotting for evidence","why is this the most relatable thing i've seen all week"],
+  meme:["who gave them permission to cook me like this 😭","this is lowkey a documentary about me fr","did NOT consent to being this seen today 💀","sending to the gc rn, brb","chat is this real?? because it's SO me","not me reading this at 3am doing the exact thing","the algorithm said 'here's your reflection npc'","this took -2000 aura and i deserved it","screenshotting for the evidence folder","most relatable thing on my fyp all week no cap"],
   game:["what texture pack is this 👀","the parkour is actually so clean","sped up 2x and i physically cannot look away","this is my entire feed now 😭","why is blocky parkour this calming","tag someone who needs this playing on mute","the movement is buttery ngl","ok who's actually playing this run","need this on loop forever","this fixed my attention span (it destroyed it)"],
   food:["bro the {n} looks insane 😭","saving this immediately","ok but who's gonna cook it for me","my mouth is watering rn fr","made {n} last night can confirm it slaps","this is illegal to post when i'm hungry","recipe?? 🙏","nah this is restaurant quality"],
   gym:["the gains gonna be CRAZY","bro is locked in 💪","this motivated me to skip the gym","W discipline ngl","what's the rep range","ok now do it without preworkout","saving for monday (it won't happen)","he's built different"],
@@ -416,7 +421,7 @@ function fill(t,topic){ return t.replace("{n}",topic.noun).replace("{s}",topic.s
 
 /* creator "pinned" opener per topic — kicks off a real conversation */
 const OP_PIN={
-  meme:["ok be honest, how personally did this attack you 👇","who are you sending this to. name them 💀","tell me i'm lying. i'll wait","rate how cooked you are 1-10 in the replies"],
+  meme:["be so fr, how cooked did this leave you 👇","tag the npc you're sending this to 💀","tell me i'm capping. i'll wait","rate your aura loss 1-10 in the replies"],
   game:["what's your comfort background game? drop it 👇","rate the parkour 1-10, no lies","1x or 2x speed — settle it in the replies","tag someone who watches these on mute all day"],
   food:["drop your worst 2am kitchen crime below 👀","who's actually making this and who's just saving it","rating your snacks in the replies, go","hot or not: pineapple on this. fight"],
   gym:["day 1 or day 47, no lying in the replies 💪","tell me your fake gym excuse for today","what's stopping you (be honest)","rep count or it didn't happen"],
@@ -430,22 +435,22 @@ const OP_PIN={
 /* comments that react to the SPECIFIC meme on screen — {punch} = the punchline of
    this meme's caption, {name} = the template. So the convo is about the actual pic. */
 const MEME_REACT=[
-  "NOT the '{punch}' part 😭 who hurt you (me. it's me)",
-  "'{punch}' is a personal attack and i'm reporting it",
-  "the '{punch}' line took me OUT 💀",
-  "ok who let {name} expose me like this for free",
-  "screenshotting the '{punch}' bit for evidence",
-  "'{punch}' >>> this is literally my whole personality",
-  "the {name} format never misses and this proves it",
-  "i felt '{punch}' in my SOUL, unfollowing (liking first)",
-  "why is '{punch}' the truest thing on this app today",
-  "tagging everyone who is '{punch}' (it's all of us)",
-  "'{punch}' had no business being this accurate",
-  "not me reading '{punch}' while literally doing it rn"
+  "NOT '{punch}' 😭 this took my whole aura",
+  "'{punch}' is diabolical i'm telling chat",
+  "the '{punch}' part had me on the floor 💀",
+  "who let {name} cook me like this for free 😭",
+  "'{punch}' is so real it's giving documentary",
+  "'{punch}' >>> that's literally my villain origin",
+  "this is so me it's not even funny (it is) fr fr",
+  "'{punch}' just gave me -1000 aura and i deserve it",
+  "chat is this real?? '{punch}' ended me 💀",
+  "tagging every npc who is '{punch}' (it's all of us)",
+  "'{punch}' had NO business being this accurate no cap",
+  "not me reading '{punch}' while doing the exact thing 💀"
 ];
 const MEME_PIN=[
-  "be honest — how hard did '{punch}' hit? 👇","tag the person who IS '{punch}' 💀",
-  "'{punch}' or you're lying to yourself. defend it below","rate '{punch}' 1-10 on the accuracy scale"
+  "be so fr — how hard did '{punch}' hit? 👇","tag the npc who IS '{punch}' 💀",
+  "'{punch}' or you're capping. defend it below","rate '{punch}' 1-10 on the 'it's giving me' scale"
 ];
 /* comments for the user's OWN uploaded photos. The app can't literally read the
    photo, but analyzePic() measures real, visible things (brightness, color, shape,
@@ -536,14 +541,14 @@ function memePunch(meme){ const c=meme.cap||[]; return stripAside(c[1]||c[0]||''
    comment kicks it off, a challenger opens, then the two escalate turn by turn up a
    heat ladder while bystanders pile on. This is what most comment sections are. */
 const FLAME_SPARK=[
-  "cereal is a soup and i will die on this hill 🥣","hot take: pineapple belongs on pizza and it's not close",
-  "the book is almost never better than the movie","a hotdog is 100% a sandwich, cope",
-  "'gif' is pronounced with a soft g, this is settled","water is not wet, it MAKES things wet",
-  "mint choc chip tastes like brushing your teeth","cold pizza > hot pizza and it's not even close",
-  "socks with sandals is actually elite comfort","5'11\" and 6'0\" are the same height be serious",
-  "tipping culture has gone completely too far","AI art is still art whether you like it or not",
-  "the customer is NOT always right and never was","breakfast food is the only good food, midnight included",
-  "you don't need 8 glasses of water that's a myth","reply guys ruined this app fr"
+  "skibidi is genuinely peak comedy and you're too old to get it","hot take: fanum tax is just theft with extra steps",
+  "mewing does literally nothing, it's a placebo 💀","having rizz is a skill issue you can't fix",
+  "'Ohio' as an insult is so 2023, let it go","being delulu is a red flag not a personality",
+  "gyatt is the worst word to ever exist, delete it","sigma males are just introverts with wifi",
+  "matcha is mid and you're all faking it 🍵","standing texts are unforgivable, call me weird idc",
+  "airpods in during a convo = automatic L","‘aura points’ aren't real stop keeping score",
+  "night owls are just people with no discipline","the group chat left on read is a war crime",
+  "streaks are fake friendship and you know it","touching grass is overrated, the feed IS my grass"
 ];
 const FLAME_OPENERS=["absolutely not 💀","this is the worst take i've seen all week","respectfully… what?","and you typed this with your whole chest?","nah this is straight up ragebait","who hurt you to make you believe this","be so for real right now","this is a certified L opinion"];
 const FLAME_LADDER=[
@@ -650,78 +655,49 @@ function genThread(topicKey, meme){
    cap = [topText, bottomText]; either half may be '' for one-liner memes. */
 const MEMES=[
   {img:"drake",name:"Drake",caps:[
-    ["doing the thing i actually planned","reorganizing my whole playlist instead"],
-    ["going to bed at a normal hour","just one more video at 3am"],
-    ["touching grass","becoming one with the couch"],
-    ["reading the article","reading only the comments"]]},
+    ["being a functional member of society","laying in bed letting my brain rot 🧠"],
+    ["mewing in silence like a sigma","yapping nonstop like an npc"],
+    ["touching grass","farming aura off my phone"],
+    ["actually doing the assignment","asking chat if it's even due 💀"]]},
   {img:"fine",name:"This Is Fine",caps:[
-    ["my responsibilities piling up","this is fine"],
-    ["247 unread notifications","this is completely fine"],
-    ["me with 39 tabs open","everything is fine"]]},
-  {img:"rollsafe",name:"Roll Safe",caps:[
-    ["can't be tired at the gym","if you never actually go"],
-    ["can't fail the test","if you don't take it"],
-    ["can't lose the streak","if you never close the app"]]},
-  {img:"pigeon",name:"Is This A Pigeon",caps:[
-    ["","is this productivity? (it is hour three of scrolling)"],
-    ["","is this rest? (i have not stopped scrolling)"]]},
-  {img:"harold",name:"Hide the Pain Harold",caps:[
-    ["yeah i only checked my phone once today","(it was four hours)"],
-    ["no i'm not addicted to scrolling","(opens the app for the 9th time)"],
-    ["i'm doing great honestly","please believe me"]]},
-  {img:"disastergirl",name:"Disaster Girl",caps:[
-    ["me after saying 'ok last video'","three hours later"],
-    ["watching my to-do list burn","comfortably, from bed"],
-    ["me and my sleep schedule","both gone"]]},
-  {img:"success",name:"Success Kid",caps:[
-    ["opened the app for one specific thing","actually did the one thing"],
-    ["phone hit 1%","right as the video ended"]]},
-  {img:"fry",name:"Not Sure If",caps:[
-    ["not sure if actually tired","or just been scrolling too long"],
-    ["not sure if hungry","or just bored holding a phone"],
-    ["not sure if i chose this","or the algorithm chose for me"]]},
-  {img:"aag",name:"Ancient Aliens",caps:[
-    ["i can't explain my screen time","aliens"],
-    ["why am i always this tired","the algorithm"],
-    ["where my whole afternoon went","aliens did this"]]},
-  {img:"mordor",name:"One Does Not Simply",caps:[
-    ["one does not simply","watch just one video"],
-    ["one does not simply","leave the group chat"],
-    ["one does not simply","go to bed early"]]},
-  {img:"interesting",name:"Most Interesting Man",caps:[
-    ["i don't always touch grass","but when i do i post about it"],
-    ["i don't always sleep early","but when i do i scroll first anyway"]]},
-  {img:"kermit",name:"None Of My Business",caps:[
-    ["maybe you should get some sleep","but that's none of my business"],
-    ["maybe close the app for tonight","but that's none of my business"]]},
+    ["my screen time report loading in","it's giving fine 🔥"],
+    ["down bad -7000 aura this week","nah it's fine actually"],
+    ["everything due at 11:59 tonight","this is completely fine 💀"]]},
   {img:"cmm",name:"Change My Mind",caps:[
-    ["","the feed knows me better than my friends do. change my mind"],
-    ["","'one more video' is never actually one more. change my mind"],
-    ["","the gym officially starts monday. change my mind"]]},
-  {img:"blb",name:"Bad Luck Brian",caps:[
-    ["finally closes the app","reopens it out of pure habit"],
-    ["deletes the app to focus","reinstalls it nine minutes later"],
-    ["swears he'll sleep early","it is now 3am"]]},
+    ["","touching grass is mid. change my mind"],
+    ["","the group chat is my roman empire. change my mind"],
+    ["","being delulu is genuinely the solulu. change my mind"]]},
   {img:"stonks",name:"Stonks",caps:[
-    ["five 'quick' minutes turned into five hours","stonks"],
-    ["replaced my entire sleep with scrolling","stonks"],
-    ["zero productivity achieved today","stonks"]]},
-  {img:"philosoraptor",name:"Philosoraptor",caps:[
-    ["if scrolling makes me this tired","am i resting or working"],
-    ["if the algorithm knows me best","who's really in charge here"],
-    ["if i save the recipe","does that count as cooking"]]},
-  {img:"yuno",name:"Y U No",caps:[
-    ["group chat","Y U NO reply"],
-    ["screen time","Y U NO go down"],
-    ["motivation","Y U NO show up today"]]},
-  {img:"grumpycat",name:"Grumpy Cat",caps:[
-    ["i had fun scrolling once","it was awful"],
-    ["they said 'just one video'","no."],
-    ["mondays","no."]]}
+    ["turned 5 mins of scrolling into 5 hours","aura 📈 stonks"],
+    ["replaced sleeping with the feed","stonks 🧠"],
+    ["gained zero rizz today somehow","stonks 📉"]]},
+  {img:"disastergirl",name:"Disaster Girl",caps:[
+    ["me after saying 'ok last video' fr","3 hours later, no cap"],
+    ["watching my to-do list burn","from bed, unbothered 💅"],
+    ["me and my sleep schedule","both cooked 🔥"]]},
+  {img:"khaby-lame",name:"Khaby",caps:[
+    ["setting 12 alarms to wake up on time",""],
+    ["making a 40-step routine to farm aura",""],
+    ["buying a $90 planner to avoid one task",""],
+    ["writing a paragraph on why you were 'basically on time'",""]]},
+  {img:"cheems",name:"Cheems",caps:[
+    ["","me: i'll lock in and start monday (i won't)"],
+    ["","me: i only checked my phone once today 🥺 (lie)"],
+    ["","me after 2 pushups: i am HIM 💪"],
+    ["","me: i'm not delulu i'm just built different"]]},
+  {img:"spiderman",name:"Spider-Man Pointing",caps:[
+    ["me vs the npc i slowly became","it's the same guy 💀"],
+    ["'i'll sleep early' vs me at 3am","pointing at each other rn"],
+    ["my 4 unfinished hobbies","all glazing each other"]]},
+  {img:"spongebob",name:"Mocking SpongeBob",mock:true,caps:[
+    ["","i'll totally do it tomorrow for real"],
+    ["","i'm so locked in right now"],
+    ["","just one more video then i'll sleep"]]}
 ];
 const MEME_HANDLES=["@memearchive","@daily.rot","@relatable.af","@nocontext.memes","@fyp.dump","@certified.meme","@brainrot.exe","@realones.only","@meme.dealer"];
 const GAME_HANDLES=["@blockmaxxing","@parkour.gawd","@2x.speedrun","@nocontext.gameplay","@grass.toucher","@sigma.blocks","@afk.andy","@respawn.king"];
-function pickMeme(){ const m=rnd(MEMES); return {name:m.name,cap:rnd(m.caps),src:'img/'+m.img+'.jpg'}; }
+function pickMeme(){ const m=rnd(MEMES); return {name:m.name,cap:rnd(m.caps),src:'img/'+m.img+'.jpg',mock:!!m.mock}; }
+function mockCase(s){ let o='',u=false; for(const ch of String(s)){ if(/[a-z]/i.test(ch)){ o+=u?ch.toUpperCase():ch.toLowerCase(); u=!u; } else o+=ch; } return o; }
 /* harmonious color pairs for blobs + canvas so the visuals don't clash */
 const PALETTES=[["#ff2d78","#ffd400"],["#00e5ff","#a64dff"],["#39ff14","#00e5ff"],
   ["#ff6b00","#ff2d78"],["#a64dff","#ff2d78"],["#00ffaa","#00e5ff"],["#ffd400","#ff6b00"],
@@ -741,9 +717,10 @@ function attachPhoto(postEl, meme){
   const bg=document.createElement('img'); bg.className='photobg ken'; bg.decoding='async'; bg.alt='';
   const im=document.createElement('img'); im.className='photo meme'; im.decoding='async'; im.alt=meme.name;
   const cap=meme.cap||['',''];
+  const mk=meme.mock?' mock':'', tx=t=>esc(meme.mock?mockCase(t):t);
   let capHTML='';
-  if(cap[0]) capHTML+='<div class="memecap top">'+esc(cap[0])+'</div>';
-  if(cap[1]) capHTML+='<div class="memecap bot">'+esc(cap[1])+'</div>';
+  if(cap[0]) capHTML+='<div class="memecap top'+mk+'">'+tx(cap[0])+'</div>';
+  if(cap[1]) capHTML+='<div class="memecap bot'+mk+'">'+tx(cap[1])+'</div>';
   im.addEventListener('load',()=>{
     bg.classList.add('on'); im.classList.add('on');
     // for the user's OWN photo: look at it and rebuild the convo to talk about it
@@ -1157,7 +1134,7 @@ function makePost(force){
   p.querySelector('.cmBtn').addEventListener('click',e=>{e.stopPropagation();openComments(pid);});
   const saveBtn=p.querySelector('.rail .rbtn:last-child');
   if(saveBtn) saveBtn.addEventListener('click',e=>{e.stopPropagation();
-    if(!saveBtn.classList.contains('liked')){ saveBtn.classList.add('liked'); addLiked({kind:'saved', pid:pid, title:'⭐ '+(p.dataset.handle||'a post'), text:p.dataset.cap||''}); toast("⭐ saved! find it in ❤️"); SFX.coin(); buzz(12); }
+    if(!saveBtn.classList.contains('liked')){ saveBtn.classList.add('liked'); addLiked({kind:'saved', pid:pid, title:'⭐ '+(p.dataset.handle||'a post'), text:p.dataset.cap||''}); toast("⭐ saved! find it in ❤️"); SFX.coin(); buzz(12); pushTicker('⭐ you saved a post'); addJackpot(3); }
   });
   return p;
 }
@@ -1179,6 +1156,7 @@ function doLike(post,x,y){
   if(!btn.classList.contains('liked')){
     btn.classList.add('liked'); btn.querySelector('.ricon').textContent='❤️';
     addLiked({kind:'post', pid:post.dataset.pid, title:(post.dataset.emoji||'')+' '+(post.dataset.handle||'a post'), text:post.dataset.cap||''});
+    pushTicker('❤️ you liked '+(post.dataset.handle||'a post')); addJackpot(2);
   }
   buzz(20); SFX.like();
   const now=Date.now(); if(now-lastLikeTime<2500){combo++;}else{combo=1;} lastLikeTime=now;
@@ -1192,7 +1170,7 @@ function doLike(post,x,y){
     document.body.appendChild(f); setTimeout(()=>f.remove(),1200);
   }
   const reward=combo>=3?combo*5:5; addCoins(reward);
-  if(combo>=3){ burst('+'+reward, combo+'x COMBO! 🔥'); buzz([10,30,10]); SFX.combo(combo); }
+  if(combo>=3){ burst('+'+reward, combo+'x COMBO! 🔥'); buzz([10,30,10]); SFX.combo(combo); pushTicker('🔥 you hit a '+combo+'x combo!'); addJackpot(combo); }
 }
 
 /* ============ burst + confetti ============ */
@@ -1220,30 +1198,45 @@ function toast(txt){
   clearTimeout(t._t); t._t=setTimeout(()=>{t.style.transform='translateY(-140px)';},2600);
 }
 setInterval(()=>{ if(Math.random()<.7) toast(rnd(NOTIF)); }, 5000);
-function milestone(){ streak++; streakEl.textContent=streak; bump(document.getElementById('streakB')); burst('🔥 '+streak,'STREAK! KEEP GOING'); buzz([20,40,20,40]); SFX.streak(); addCoins(25); }
+function milestone(){ streak++; streakEl.textContent=streak; bump(document.getElementById('streakB')); burst('🔥 '+streak,'STREAK! KEEP GOING'); buzz([20,40,20,40]); SFX.streak(); addCoins(25); pushTicker('🔥 you\'re on a '+streak+' streak'); }
 function fakeShare(){ toast("📤 shared! +10 gems"); addCoins(10); buzz(30); SFX.swoosh(); }
 
 /* ============ CASINO MODE — many things happening at once ============ */
 const started=()=>document.getElementById('gate').style.display==='none';
-// scrolling hype ticker
-const TICKER=["🔥 @sigma just hit a 50x combo","💎 lilbro_lore won 250 gems on the wheel","👀 thousands scrolling right now","🚨 FLAME WAR erupting a few posts down","🏆 you're in the top 3% of scrollers today","⚡ 2X GEMS active — go go go","💀 someone just posted the worst take of all time","🎁 mystery drop loading…","📈 your aura is up 400 points","🍿 biggest argument of the day is happening NOW","🤑 jackpot is getting HUGE","🧠 your brain: fully rotted (nice)"];
-(function(){ const r=document.getElementById('tickerRun'); if(r) r.textContent=(TICKER.join('     •     ')+'     •     ').repeat(2); })();
+
+/* ---- event-driven ticker: shows REAL stuff you do, mixed with hype filler ---- */
+const HYPE=["🚨 FLAME WAR erupting a few posts down","⚡ 2X GEMS active rn","🍿 biggest argument of the day is happening NOW","🤑 jackpot climbing FAST","💀 someone just posted a certified L take","🎁 mystery drop loading…","👑 aura farm in progress","🧠 brain rot levels: critical (nice)","🔥 the opps are watching this thread"];
+const tickerFeed=[];
+function pushTicker(msg){ tickerFeed.unshift(msg); if(tickerFeed.length>16) tickerFeed.pop(); }
+function buildTicker(){ const r=document.getElementById('tickerRun'); if(!r) return;
+  const src=tickerFeed.slice(0,10), items=[]; for(let i=0;i<Math.max(6,src.length);i++) items.push(src[i]||rnd(HYPE));
+  r.textContent='   '+items.join('     •     ')+'     •     '; }
+['👀 thousands are scrolling right now','🔥 you just opened SCROLLZ (W)','📈 aura loading…'].forEach(pushTicker);
+(function(){ const r=document.getElementById('tickerRun'); if(r){ buildTicker(); r.addEventListener('animationiteration', buildTicker); } })();
+
+/* ---- jackpot meter: fills as you scroll, pays out big ---- */
+let jackpot=0;
+function updateJack(){ const f=document.getElementById('jackfill'); if(f) f.style.width=jackpot+'%'; const l=document.getElementById('jacklabel'); if(l) l.textContent='🎰 JACKPOT '+Math.floor(jackpot)+'%'; }
+function addJackpot(n){ if(!started()) return; jackpot=Math.min(100,jackpot+n); updateJack(); if(jackpot>=100) jackpotHit(); }
+function jackpotHit(){ jackpot=0; updateJack(); const amt=500+ri(1500); addCoins(amt); burst('🎰 +'+amt.toLocaleString()+' 💎','JACKPOT!!! 🤑'); confetti(); if(soundOn) SFX.jackpot(); buzz([30,60,30,60,90]); pushTicker('🎰 YOU HIT THE JACKPOT +'+amt+' 💎'); for(let i=0;i<26;i++) setTimeout(floatGem,i*40); }
+updateJack();
+
 // live "watching" counter that jitters
-setInterval(()=>{ const el=document.getElementById('liveN'); if(!el) return; let n=parseInt(el.dataset.n||'12483',10); n+=ri(160)-70; if(n<8000)n=8000+ri(600); el.dataset.n=n; el.textContent=n.toLocaleString(); }, 1400);
-// "someone just won" popups sliding in
+setInterval(()=>{ const el=document.getElementById('liveN'); if(!el) return; let n=parseInt(el.dataset.n||'12483',10); n+=ri(180)-80; if(n<8000)n=8000+ri(700); el.dataset.n=n; el.textContent=n.toLocaleString(); }, 1200);
+// "someone just won" popups sliding in (frequent)
 function winPop(){ if(!started()) return; const p=document.createElement('div'); p.className='winPop';
-  const amt=[50,100,250,500,1000,25,777][ri(7)]; p.innerHTML='🎉 <b>'+esc(rnd(NAMES))+'</b> just won <b>'+amt+' 💎</b>';
+  const amt=[50,100,250,500,1000,25,777,2000][ri(8)], who=rnd(NAMES); p.innerHTML='🎉 <b>'+esc(who)+'</b> just won <b>'+amt+' 💎</b>';
   document.body.appendChild(p); requestAnimationFrame(()=>p.classList.add('show'));
-  if(soundOn) SFX.tick(); setTimeout(()=>p.classList.remove('show'),2600); setTimeout(()=>p.remove(),3200); }
-setInterval(()=>{ if(started() && chance(.85)) winPop(); }, 5200);
-// floating gems drifting up constantly
-const GEMOJI=['💎','🪙','🔥','⭐','💰','🧠','💸','😈','👑'];
+  if(soundOn) SFX.tick(); pushTicker('💎 '+who+' won '+amt+' gems'); setTimeout(()=>p.classList.remove('show'),2500); setTimeout(()=>p.remove(),3100); }
+setInterval(()=>{ if(started() && chance(.9)) winPop(); }, 4200);
+// floating gems drifting up constantly (denser)
+const GEMOJI=['💎','🪙','🔥','⭐','💰','🧠','💸','😈','👑','🤑','🗿'];
 function floatGem(){ const g=document.createElement('div'); g.className='floatgem'; g.textContent=rnd(GEMOJI);
-  g.style.left=ri(100)+'vw'; g.style.fontSize=(15+ri(18))+'px'; const dur=4+ri(4); g.style.animationDuration=dur+'s';
+  g.style.left=ri(100)+'vw'; g.style.fontSize=(15+ri(20))+'px'; const dur=3.5+ri(4); g.style.animationDuration=dur+'s';
   document.body.appendChild(g); setTimeout(()=>g.remove(),dur*1000+250); }
-setInterval(()=>{ if(started() && chance(.9)){ const k=1+ri(2); for(let i=0;i<k;i++) setTimeout(floatGem,i*260); } }, 2000);
-// occasional coin rain for a jackpot rush
-setInterval(()=>{ if(started() && chance(.55)){ for(let i=0;i<16;i++) setTimeout(floatGem,i*60); if(soundOn) SFX.coin(); } }, 24000);
+setInterval(()=>{ if(started() && chance(.95)){ const k=2+ri(3); for(let i=0;i<k;i++) setTimeout(floatGem,i*180); } }, 1600);
+// coin rain rushes
+setInterval(()=>{ if(started() && chance(.6)){ for(let i=0;i<18;i++) setTimeout(floatGem,i*55); if(soundOn) SFX.coin(); } }, 18000);
 
 /* ============ COMMENTS ============ */
 const commentsEl=document.getElementById('comments');
@@ -1300,6 +1293,7 @@ function postComment(){
   commentStore[activePid].unshift(uc);
   cmInput.value=''; renderComments(activePid); cmList.scrollTop=0;
   SFX.send(); addCoins(5); buzz(15); toast("💬 posted! +5 gems");
+  pushTicker('💬 you posted a comment (brave)'); addJackpot(5);
   botsRespondTo(activePid, uc);
 }
 /* the internet reacts to YOUR comment: unhinged takes, then a flame war erupts,
@@ -1337,8 +1331,10 @@ const obs=new IntersectionObserver(function(es){
       e.target.classList.add('live'); // rad: pop the caption/rail in as it snaps into view
       e.target.querySelectorAll('.fill').forEach(function(f,idx){ f.animate([{width:'0%'},{width:'100%'}],{duration:1500+idx*1200,fill:'forwards'}); });
       buzz(8);
+      addJackpot(4+ri(4));                 // the meter fills as you scroll
+      if(postsSeen%10===0){ pushTicker('🧠 you\'ve rotted '+postsSeen+' posts today'); }
       if(postsSeen%5===0){ addCoins(15); }
-      if(postsSeen%12===0){ burst('🎁','MYSTERY DROP! +100'); addCoins(100); buzz([15,30,60]); SFX.mystery(); }
+      if(postsSeen%12===0){ burst('🎁','MYSTERY DROP! +100'); addCoins(100); buzz([15,30,60]); SFX.mystery(); pushTicker('🎁 you snagged a mystery +100 💎'); }
       const all=feed.children;
       if([].indexOf.call(all,e.target) > all.length-4){ grow(6); }
     }
@@ -1428,11 +1424,11 @@ document.getElementById('soundBtn').addEventListener('click',function(e){ e.stop
 
 /* ============ rad: rotating hype taglines on the gate ============ */
 const GATE_TAGS=[
-  "real memes 💀 satisfying loops 🌀 headlines 📰",
-  "add your own camera roll 📷 make it YOUR feed",
-  "double-tap to like 💥 chain combos for gems 💎",
-  "warning: your brain is gonna love this 🧠",
-  "infinite scroll · zero regrets · maybe 🫠"
+  "real memes 💀 gameplay 🎮 flame wars 🔥",
+  "add your camera roll 📷 make it YOUR fyp",
+  "double-tap = W 💥 chain combos for gems 💎",
+  "warning: certified aura destroyer 🧠",
+  "infinite scroll · zero rizz gained · fr 🫠"
 ];
 (function(){
   const el=document.getElementById('gateTag'); if(!el) return;
@@ -1446,7 +1442,7 @@ const GATE_TAGS=[
 /* ============ PWA: install + keep the home-screen app on the newest version ============
    The service worker is NETWORK-FIRST, so every online launch pulls the latest build
    and only falls back to cache when offline — the app can't get stuck on an old version. */
-const APP_VERSION='v16';
+const APP_VERSION='v17';
 (function(){ const v=document.getElementById('verTag'); if(v) v.textContent='SCROLLZ '+APP_VERSION; })();
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){

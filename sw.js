@@ -1,18 +1,16 @@
 /* SCROLLZ service worker — NETWORK-FIRST so the app always updates when online,
    and still works offline by falling back to the last cached copy.
    Bump SW_VERSION whenever you ship a new build to force a fresh cache. */
-const SW_VERSION = 'scrollz-v16';
+const SW_VERSION = 'scrollz-v17';
 const CORE = [
   './brainrot.html',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
   './icon-180.png',
-  './img/drake.jpg','./img/fine.jpg','./img/rollsafe.jpg','./img/pigeon.jpg',
-  './img/harold.jpg','./img/disastergirl.jpg','./img/success.jpg','./img/fry.jpg',
-  './img/aag.jpg','./img/mordor.jpg','./img/interesting.jpg','./img/kermit.jpg',
-  './img/cmm.jpg','./img/blb.jpg','./img/stonks.jpg','./img/philosoraptor.jpg',
-  './img/yuno.jpg','./img/grumpycat.jpg'
+  './img/drake.jpg','./img/fine.jpg','./img/cmm.jpg','./img/stonks.jpg',
+  './img/disastergirl.jpg','./img/khaby-lame.jpg','./img/cheems.jpg',
+  './img/spiderman.jpg','./img/spongebob.jpg'
 ];
 
 self.addEventListener('install', e => {
