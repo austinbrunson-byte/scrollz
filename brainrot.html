@@ -362,21 +362,50 @@ const MEME_PIN=[
   "be honest — how hard did '{punch}' hit? 👇","tag the person who IS '{punch}' 💀",
   "'{punch}' or you're lying to yourself. defend it below","rate '{punch}' 1-10 on the accuracy scale"
 ];
-/* comments for the user's OWN uploaded photos — camera-roll energy, no captions */
-const USERPIC_REACT=[
-  "ok where was this taken 👀 the vibes are unreal",
-  "no context and somehow i love it more",
-  "this is actually a really good shot ngl",
-  "why is this weirdly nostalgic already",
-  "the lighting in this one 😮‍💨",
-  "story behind this? need the lore",
-  "framing this on my wall fr","the camera roll really said masterpiece",
-  "how do you have a shot this clean just sitting there","this one lives rent free now"
-];
-const USERPIC_PIN=[
-  "drop the story behind this one below 👇","rate this shot 1-10, be honest",
-  "what were we doing here 😭 i forgot","POV or context in the replies, go"
-];
+/* comments for the user's OWN uploaded photos. The app can't literally read the
+   photo, but analyzePic() measures real, visible things (brightness, color, shape,
+   screenshot-ness) so the commenters react to what they'd actually notice. */
+const USERPIC_TRAIT={
+  screenshot:["you really screenshotted this AND kept it 💀","the screenshot energy is undeniable","not a screenshot 😭 what were you even looking at","we all have 4000 of these exact screenshots","this is straight from the 'i'll deal with it later' folder","bro archives screenshots like they're court evidence","the little status bar at the top gave it away 💀"],
+  dark:["why is this so dark 😭 turn a light on","i can barely see it and i'm STILL invested","the lighting said 'figure it out yourself'","shot in a cave (affectionate)","dark mode the photo","my brightness is at 100 and it's still night in here"],
+  bright:["the brightness is ATTACKING me 🥵","my eyes 😭 who approved this exposure","bright enough to wake up the whole house","the flash really said EVERYONE must see this"],
+  gray:["black & white? ok mr artsy 🎨","the no-color vibe actually kinda hard","greyscale core","this is giving film student final project"],
+  colorful:["the COLORS in this 😍","so saturated my phone got warm","the palette is actually immaculate","pure eye candy fr"],
+  tall:["portrait mode said say less 📱","tall shot, big vibes","this belongs on a story fr"],
+  wide:["widescreen? very cinematic of you 🎬","landscape mode, we're being fancy","this is giving desktop wallpaper"],
+  square:["perfectly square, chef's kiss 🤌","instagram 2012 called","the crop is clean ngl"],
+  generic:["ok but the vibe is actually real","no context and i love it more","this one has lore, i can feel it","adding this to the mood board","genuinely a great pull from the camera roll","tag yourself, i'm the thing in the background","why is this weirdly nostalgic already"]
+};
+const USERPIC_PIN_TRAIT={
+  screenshot:["ok why did you screenshot this 😭 explain 👇","real reason this is still in your camera roll?"],
+  dark:["turn a light on next time or nah? 👇","rate the lighting 1-10 (be mean)"],
+  bright:["too bright or just bright enough? 👇"],
+  colorful:["rate this color palette 1-10 🎨"],
+  gray:["black & white — art or accident? defend it below"],
+  generic:["drop the story behind this one 👇","what were we doing here 😭","rate this shot 1-10, no lies","POV or full context in the replies, go"]
+};
+/* on-device look at the photo → list of visible traits (same-origin, never uploaded) */
+function analyzePic(img){
+  try{
+    const w=40,h=40, c=document.createElement('canvas'); c.width=w; c.height=h;
+    const x=c.getContext('2d'); x.drawImage(img,0,0,w,h);
+    const d=x.getImageData(0,0,w,h).data, n=w*h;
+    let lum=0,bright=0,dark=0,colf=0;
+    for(let i=0;i<d.length;i+=4){
+      const r=d[i],g=d[i+1],b=d[i+2], L=0.299*r+0.587*g+0.114*b;
+      lum+=L; if(L>232)bright++; if(L<26)dark++; colf+=Math.max(r,g,b)-Math.min(r,g,b);
+    }
+    lum/=n; colf/=n;
+    const nat=img.naturalHeight/(img.naturalWidth||1);
+    const brightFrac=bright/n, darkFrac=dark/n, traits=[];
+    const shot = nat>1.5 && colf<58 && (brightFrac>0.28 || darkFrac>0.30);
+    if(shot) traits.push('screenshot');
+    if(lum<62) traits.push('dark'); else if(lum>198) traits.push('bright');
+    if(colf<22) traits.push('gray'); else if(colf>95) traits.push('colorful');
+    if(!shot){ if(nat>1.55) traits.push('tall'); else if(nat<0.78) traits.push('wide'); else if(Math.abs(nat-1)<0.12) traits.push('square'); }
+    return traits;
+  }catch(e){ return []; }
+}
 function stripAside(s){ return String(s||'').replace(/\s*\([^)]*\)\s*/g,' ').replace(/\s+/g,' ').trim(); }
 function memePunch(meme){ const c=meme.cap||[]; return stripAside(c[1]||c[0]||''); }
 
@@ -387,7 +416,11 @@ function genThread(topicKey, meme){
   const topic=TOPICS[topicKey];
   let tops, pin;
   if(meme && meme.user){                       // the user's own photo
-    tops=USERPIC_REACT; pin=USERPIC_PIN;
+    const tr=(meme.traits&&meme.traits.length)?meme.traits:['generic'];
+    let pool=[]; tr.forEach(k=>{ if(USERPIC_TRAIT[k]) pool=pool.concat(USERPIC_TRAIT[k]); });
+    tops=pool.concat(USERPIC_TRAIT.generic);
+    pin=USERPIC_PIN_TRAIT.generic;
+    for(const k of tr){ if(USERPIC_PIN_TRAIT[k]){ pin=USERPIC_PIN_TRAIT[k]; break; } }
   } else if(meme){                             // a specific meme template
     const P=memePunch(meme)||meme.name;
     const sub=t=>t.replace(/\{punch\}/g,P).replace(/\{name\}/g,meme.name);
@@ -536,7 +569,18 @@ function attachPhoto(postEl, meme){
   let capHTML='';
   if(cap[0]) capHTML+='<div class="memecap top">'+esc(cap[0])+'</div>';
   if(cap[1]) capHTML+='<div class="memecap bot">'+esc(cap[1])+'</div>';
-  im.addEventListener('load',()=>{ bg.classList.add('on'); im.classList.add('on'); });
+  im.addEventListener('load',()=>{
+    bg.classList.add('on'); im.classList.add('on');
+    // for the user's OWN photo: look at it and rebuild the convo to talk about it
+    if(meme.user){
+      const traits=analyzePic(im);
+      if(traits.length){
+        meme.traits=traits;
+        const pid=postEl.dataset.pid;
+        if(pid && commentStore[pid]) commentStore[pid]=genThread(postEl.dataset.topic||'meme', meme);
+      }
+    }
+  });
   im.addEventListener('error',()=>{ wrap.remove(); }); // fall back to the canvas floor
   wrap.appendChild(bg); wrap.appendChild(im);
   wrap.insertAdjacentHTML('beforeend', capHTML);
@@ -1069,7 +1113,7 @@ const GATE_TAGS=[
 /* ============ PWA: install + keep the home-screen app on the newest version ============
    The service worker is NETWORK-FIRST, so every online launch pulls the latest build
    and only falls back to cache when offline — the app can't get stuck on an old version. */
-const APP_VERSION='v11';
+const APP_VERSION='v12';
 (function(){ const v=document.getElementById('verTag'); if(v) v.textContent='SCROLLZ '+APP_VERSION; })();
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
