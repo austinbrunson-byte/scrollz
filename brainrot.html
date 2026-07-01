@@ -497,9 +497,56 @@ const AI_CONCEPT={
 function stripAside(s){ return String(s||'').replace(/\s*\([^)]*\)\s*/g,' ').replace(/\s+/g,' ').trim(); }
 function memePunch(meme){ const c=meme.cap||[]; return stripAside(c[1]||c[0]||''); }
 
+/* ============ FLAME WAR ENGINE ============
+   The commenters argue with EACH OTHER as different people. A debatable "spark"
+   comment kicks it off, a challenger opens, then the two escalate turn by turn up a
+   heat ladder while bystanders pile on. This is what most comment sections are. */
+const FLAME_SPARK=[
+  "cereal is a soup and i will die on this hill 🥣","hot take: pineapple belongs on pizza and it's not close",
+  "the book is almost never better than the movie","a hotdog is 100% a sandwich, cope",
+  "'gif' is pronounced with a soft g, this is settled","water is not wet, it MAKES things wet",
+  "mint choc chip tastes like brushing your teeth","cold pizza > hot pizza and it's not even close",
+  "socks with sandals is actually elite comfort","5'11\" and 6'0\" are the same height be serious",
+  "tipping culture has gone completely too far","AI art is still art whether you like it or not",
+  "the customer is NOT always right and never was","breakfast food is the only good food, midnight included",
+  "you don't need 8 glasses of water that's a myth","reply guys ruined this app fr"
+];
+const FLAME_OPENERS=["absolutely not 💀","this is the worst take i've seen all week","respectfully… what?","and you typed this with your whole chest?","nah this is straight up ragebait","who hurt you to make you believe this","be so for real right now","this is a certified L opinion"];
+const FLAME_LADDER=[
+  "ok that's just objectively wrong lol",
+  "did you even read what i wrote?",
+  "i literally explained it already, try keeping up",
+  "you're not ready for this conversation ngl",
+  "imagine being THIS confidently wrong 💀",
+  "buddy. BUDDY. go touch some grass.",
+  "i'm not arguing with someone who types like that",
+  "pulled up your profile and yeah… it explains everything",
+  "this is why nobody agrees with you btw",
+  "blocked. reported. mogged. good day.",
+  "we are SO done here 🚫 enjoy being wrong forever",
+  "crying about it won't make you right champ"
+];
+const FLAME_CROWD=["🍿🍿🍿","not the flame war in the replies 😭","this thread is UNHINGED and i'm here for it","why are you both like this","grabbing a snack, this is better than the post","mods?? where are the mods","the way i scrolled UP for context 💀","both of you. outside. now.","genuinely the best thread on this app rn","screenshotting this for the group chat","imagine caring this much about pizza 😭","'this you?' energy all over this reply section","10 minutes of my life reading you two argue, no regrets"];
+
+/* turn a top comment into a debate: it becomes a spicy take, a challenger opens,
+   the two escalate turn-by-turn up the heat ladder, then bystanders pile on. */
+function buildFlameWar(c, pickName){
+  c.text=rnd(FLAME_SPARK); c.likes=8000+ri(30000); c.opLiked=false;
+  const foe=pickName();                                   // the challenger
+  c.replies.push({user:foe,verif:chance(.05),time:(1+ri(30))+'m',text:rnd(FLAME_OPENERS),likes:ri(4000),liked:false,flame:true});
+  const turns=3+ri(5);                                    // how heated it gets
+  let idx=ri(2), speaker=c.user;                          // OP defends their take first
+  for(let k=0;k<turns;k++){
+    c.replies.push({user:speaker,verif:chance(.04),time:(1+ri(28))+'m',text:FLAME_LADDER[Math.min(idx,FLAME_LADDER.length-1)],likes:ri(3000),liked:false,flame:true});
+    idx+=1+ri(2); speaker=(speaker===foe)?c.user:foe;
+  }
+  const crowd=1+ri(3);                                    // bystanders grab popcorn
+  for(let k=0;k<crowd;k++){ c.replies.push({user:pickName(),verif:false,time:(1+ri(18))+'m',text:rnd(FLAME_CROWD),likes:ri(5000),liked:false}); }
+}
+
 /* ============ COHERENT THREAD ENGINE ============
-   Builds a real conversation ABOUT the pic: a pinned creator prompt, top comments that
-   react to this exact meme/photo, and replies that RESPOND (agree/argue/ask→answer). */
+   Builds a real conversation: a pinned creator prompt, on-topic reactions, and — very
+   commonly — flame wars where different people argue with each other and escalate. */
 function genThread(topicKey, meme){
   const topic=TOPICS[topicKey];
   let tops, pin;
@@ -534,19 +581,17 @@ function genThread(topicKey, meme){
   for(let i=0;i<n;i++){
     const c={user:pickName(),verif:chance(.12),time:(1+ri(58))+(chance(.5)?'m':'h'),
       text:fill(topPool[i%topPool.length],topic),likes:ri(14000),liked:false,opLiked:chance(.18),replies:[]};
-    if(chance(.5)){
-      // pick a conversational shape so the replies read as a real exchange
+    // FLAME WAR: keep the #1 comment on-topic, but below it fights are common (~35%)
+    if(i>0 && chance(.35)){
+      buildFlameWar(c, pickName);
+    } else if(chance(.5)){
+      // a normal little exchange where the replies actually respond
       const shapes=[["agree","joke"],["argue","ratio"],["relate","agree"],["ask","answer"],["joke","argue"]];
       const [sa,sb]=rnd(shapes);
       const pool=uniq(REPLY[sa].concat(REPLY[sb]), 1+ri(3));
-      pool.forEach((txt,r)=>{
-        const rep={user:pickName(),verif:chance(.05),time:(1+ri(40))+'m',text:txt,likes:ri(1800),liked:false,opLiked:chance(.1)};
-        c.replies.push(rep);
-      });
-      // occasional nested clap-back on the first reply = a real back-and-forth
+      pool.forEach(txt=>{ c.replies.push({user:pickName(),verif:chance(.05),time:(1+ri(40))+'m',text:txt,likes:ri(1800),liked:false,opLiked:chance(.1)}); });
       if(c.replies.length && chance(.3)){
-        c.replies.push({user:pickName(),verif:false,time:(1+ri(20))+'m',
-          text:rnd(REPLY[chance(.5)?'joke':'ratio']),likes:ri(600),liked:false,nested:true});
+        c.replies.push({user:pickName(),verif:false,time:(1+ri(20))+'m',text:rnd(REPLY[chance(.5)?'joke':'ratio']),likes:ri(600),liked:false,nested:true});
       }
     }
     thread.push(c);
@@ -1268,7 +1313,7 @@ const GATE_TAGS=[
 /* ============ PWA: install + keep the home-screen app on the newest version ============
    The service worker is NETWORK-FIRST, so every online launch pulls the latest build
    and only falls back to cache when offline — the app can't get stuck on an old version. */
-const APP_VERSION='v14';
+const APP_VERSION='v15';
 (function(){ const v=document.getElementById('verTag'); if(v) v.textContent='SCROLLZ '+APP_VERSION; })();
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
