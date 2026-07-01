@@ -972,7 +972,7 @@ function makeSatCanvas(post,kind,col1,col2){
 function hexRGB(h){ h=h.replace('#',''); return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)]; }
 function drawPlasma(s){
   const {ctx,W,H,c1,c2}=s; const t=s.t;
-  const img=ctx.createImageData(W,H); const d=img.data;
+  const img=s._img||(s._img=ctx.createImageData(W,H)); const d=img.data;  // reuse buffer (no per-frame alloc)
   for(let y=0;y<H;y+=2){ for(let x=0;x<W;x+=2){
     const v=(Math.sin(x/18+t)+Math.sin(y/14+t*1.1)+Math.sin((x+y)/22+t)+Math.sin(Math.hypot(x-W/2,y-H/2)/20-t))/4;
     const m=(v+1)/2;
@@ -1039,7 +1039,8 @@ function drawBlocks(s){
   for(let i=0;i<4;i++){ const sy=(t*260+i*70)%H; ctx.beginPath(); ctx.moveTo(px-12,sy); ctx.lineTo(px-34,sy); ctx.stroke(); }
 }
 /* single rAF loop drives all visible canvases (perf) */
-function tickCanvases(){ liveCanvases.forEach(cv=>{ if(!cv.isConnected){ liveCanvases.delete(cv); return; } if(cv._on && cv._draw) cv._draw(); }); requestAnimationFrame(tickCanvases); }
+let _cframe=0;
+function tickCanvases(){ _cframe^=1; liveCanvases.forEach(cv=>{ if(!cv.isConnected){ liveCanvases.delete(cv); return; } if(_cframe && cv._on && cv._draw) cv._draw(); }); requestAnimationFrame(tickCanvases); } // draw at ~30fps
 requestAnimationFrame(tickCanvases);
 
 /* ============ state ============ */
@@ -1504,12 +1505,15 @@ const obs=new IntersectionObserver(function(es){
 function pruneFeed(){
   const vh=feed.clientHeight||1;
   let guard=0;
-  while(feed.children.length>22 && guard++<8){
+  while(feed.children.length>18 && guard++<10){
     const idx=Math.round(feed.scrollTop/vh);
-    if(idx<=10) break;                 // always keep ~10 posts above the active one
+    if(idx<=8) break;                  // always keep ~8 posts above the active one
     const first=feed.firstChild; if(!first) break;
     const h=first.offsetHeight||vh;
-    first.querySelectorAll('canvas').forEach(c=>liveCanvases.delete(c));
+    try{ obs.unobserve(first); }catch(e){}
+    first.querySelectorAll('canvas').forEach(function(c){ liveCanvases.delete(c); try{ canvasObs().unobserve(c); }catch(e){} c.width=0; c.height=0; c._draw=null; });
+    first.querySelectorAll('img').forEach(function(im){ im.src=''; });   // release decoded image memory
+    const pid2=first.dataset.pid; if(pid2){ delete commentStore[pid2]; delete specByPid[pid2]; }
     feed.removeChild(first);
     feed.scrollTop-=h;                 // keep the current post visually in place
   }
@@ -1711,7 +1715,7 @@ const GATE_TAGS=[
 /* ============ PWA: install + keep the home-screen app on the newest version ============
    The service worker is NETWORK-FIRST, so every online launch pulls the latest build
    and only falls back to cache when offline — the app can't get stuck on an old version. */
-const APP_VERSION='v20';
+const APP_VERSION='v21';
 (function(){ const v=document.getElementById('verTag'); if(v) v.textContent='SCROLLZ '+APP_VERSION; })();
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
