@@ -26,6 +26,15 @@
   .photo.on{opacity:1;}
   .ken{animation:ken 18s ease-in-out infinite alternate;}
   @keyframes ken{0%{transform:scale(1.08) translate(0,0)}100%{transform:scale(1.3) translate(-4%,-3%)}}
+
+  /* real local memes: whole image visible, over a soft blurred backdrop + Impact caption */
+  .memewrap{position:absolute; inset:0; z-index:4;}
+  .photobg{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(32px) brightness(.5) saturate(1.3); transform:scale(1.15); opacity:0; transition:opacity .5s ease; z-index:0;}
+  .photobg.on{opacity:1;}
+  .photo.meme{object-fit:contain; z-index:1;}
+  .memecap{position:absolute; left:0; right:0; z-index:3; text-align:center; padding:0 14px; font-family:Impact,"Arial Black",Haettenschweiler,sans-serif; font-weight:900; text-transform:uppercase; color:#fff; line-height:1.02; letter-spacing:.5px; -webkit-text-stroke:1.5px #000; text-shadow:0 3px 0 #000,2px 2px 0 #000,0 0 12px #000; word-wrap:break-word; pointer-events:none;}
+  .memecap.top{top:calc(62px + env(safe-area-inset-top)); font-size:clamp(21px,7vw,38px);}
+  .memecap.bot{bottom:184px; font-size:clamp(21px,7vw,38px);}
   .satcanvas{position:absolute; inset:0; width:100%; height:100%; z-index:0; object-fit:cover;}
   .expandHint{position:absolute; top:calc(56px + env(safe-area-inset-top)); right:10px; z-index:7; background:#000a; border:1px solid #ffffff33; border-radius:999px; padding:5px 11px; font-size:12px; font-weight:800; color:#fff; pointer-events:none; opacity:.85;}
 
@@ -132,6 +141,10 @@
   .cmUser{font-size:13px; font-weight:800; color:#cfd4ff;}
   .cmUser .verif{color:var(--cyan); font-size:12px;}
   .cmUser .time{color:#777; font-weight:600; margin-left:6px; font-size:11px;}
+  .cmUser .crtag{background:var(--gold); color:#000; font-size:10px; font-weight:900; padding:1px 6px; border-radius:6px; margin-left:6px; letter-spacing:.5px;}
+  .crComment{background:linear-gradient(90deg,rgba(255,212,0,.06),transparent); border-radius:12px; padding:8px; margin:2px -8px;}
+  .pinTag{display:inline-block; font-size:11px; font-weight:800; color:var(--gold); margin:1px 0 3px;}
+  .opLk{color:var(--hot); font-weight:800; font-size:11px; display:flex; align-items:center; gap:3px;}
   .cmText{font-size:15px; margin:2px 0 5px; line-height:1.3; word-wrap:break-word; white-space:pre-line;}
   .cmMeta{display:flex; gap:16px; align-items:center; font-size:12px; color:#888; font-weight:700;}
   .cmMeta span{cursor:pointer; display:flex; align-items:center; gap:4px;}
@@ -146,15 +159,19 @@
 
 <div id="gate">
   <h1>SCROLLZ</h1>
-  <p>deep-fried memes 💀 satisfying loops 🌀 headlines 📰<br>tap any meme to go fullscreen</p>
+  <p>real memes 💀 satisfying loops 🌀 headlines 📰<br>tap any meme to go fullscreen</p>
   <button id="go">TAP TO ROT 🧠</button>
-  <p style="font-size:11px;opacity:.5">tap = consent to lose 5 minutes • gems are fake • celebs are made up</p>
+  <button id="gatePics" style="padding:12px 30px;font-size:15px;font-weight:800;border:1px solid #ffffff33;border-radius:999px;background:#000;color:#fff;cursor:pointer">📁 add your own photos</button>
+  <p style="font-size:11px;opacity:.5">tap = consent to lose 5 minutes • gems are fake • celebs are made up<br>your photos stay on your device — nothing is uploaded</p>
 </div>
+
+<input type="file" id="picInput" accept="image/*" multiple style="display:none">
 
 <div id="top">
   <div class="badge" id="streakB">🔥<span id="streak">1</span></div>
   <div class="badge" id="coinsB">💎<span id="coins">0</span></div>
   <div class="badge">⏳<span id="guilt">0:00</span></div>
+  <button class="badge" id="picsBtn">📁<span id="picCount"></span></button>
   <button class="badge" id="shopBtn">SHOP 🛒</button>
 </div>
 
@@ -231,9 +248,13 @@ const TOPICS={
   hot_take:{noun:"this take",subj:"the opinion",verb:"said",emoji:"🔥",cap:["unpopular opinion incoming","say it louder for the back","i said what i said","this'll get me cancelled but","hear me out"]}
 };
 const TOPIC_KEYS=Object.keys(TOPICS);
+/* 'meme' is added AFTER TOPIC_KEYS so it's only ever used by photo/meme posts,
+   never picked at random for a card post. */
+TOPICS.meme={noun:"this meme",subj:"the meme",verb:"posted",emoji:"💀",cap:["tag someone 💀","why is this so accurate","no because this is literally me","every single time 😭","who made this 😭","the accuracy is scary"]};
 
 /* top-level comments per topic */
 const TOP={
+  meme:["ok who gave them permission to post this about me specifically 😭","the caption is doing SO much heavy lifting","i did not consent to being this seen today","sending this to the group chat immediately","this is a documentary about my life","not me reading this at 3am while doing the exact thing","the algorithm really said 'here's your reflection'","bold of them to expose me like this for free","screenshotting for evidence","why is this the most relatable thing i've seen all week"],
   food:["bro the {n} looks insane 😭","saving this immediately","ok but who's gonna cook it for me","my mouth is watering rn fr","made {n} last night can confirm it slaps","this is illegal to post when i'm hungry","recipe?? 🙏","nah this is restaurant quality"],
   gym:["the gains gonna be CRAZY","bro is locked in 💪","this motivated me to skip the gym","W discipline ngl","what's the rep range","ok now do it without preworkout","saving for monday (it won't happen)","he's built different"],
   pet:["i would die for {n} 😭","the little BEANS","not me making a noise out loud","he KNOWS he's the main character","ok the ears???","too pure for this app","adopting a cat now because of this","protect at all costs 🫡"],
@@ -244,11 +265,13 @@ const TOP={
   hot_take:["bro really {v} that out loud 💀","controversial but kinda real","absolutely not (you're a little right)","the confidence to post this","disagree but respect the bravery","this'll start a war below","unc opinion detected","ratio incoming but ok"]
 };
 const REPLY={
-  agree:["real","this exactly 🙏","said what i was thinking","fr fr","100%","couldn't have said it better","based","yes someone gets it"],
-  argue:["nah you're reaching","hard disagree lol","this you? 💀","respectfully no","ok unc","that's crazy work ngl","be so for real"],
-  joke:["bro got a TED talk in the replies","why'd you say it like a villain","not the essay 😭","calm down professor","ok shakespeare","the dedication to type all that"],
-  relate:["literally me","this is so my situation","why did i feel attacked","get out of my head","felt this one","calling me out in someone's comments"],
-  ratio:["+ ratio","🤓☝️","didn't ask","L take","cope","wrong"]
+  agree:["real","this exactly 🙏","said what i was thinking","fr fr no lies detected","100% couldn't have said it better","based and correct","finally someone with sense","you dropped this 👑","screaming this is so true"],
+  argue:["nah you're reaching a little","hard disagree lol","this you? 💀","respectfully touch grass","ok but source?","that's crazy work ngl","be so for real right now","counterpoint: no","you cannot be serious rn"],
+  joke:["bro really wrote a TED talk in the replies","why'd you say it like a movie villain","not the whole essay 😭","calm down professor","ok shakespeare relax","the dedication to type all this is insane","you woke up and chose academia","this comment has a word count"],
+  relate:["ok but this is literally me too","why did i feel personally attacked","get out of my head please","felt this one in my spine","calling me out in someone else's comments is wild","adding this to my personality"],
+  ratio:["+ ratio","🤓☝️ well actually","didn't ask but ok","L + you fell off","the cope is strong","this comment is so brave (wrong)"],
+  ask:["wait how does that even work","genuinely asking, is it worth it","ok but does it actually though","link?? need it","explain like i'm 5 please","real question who has time for this"],
+  answer:["yeah it actually holds up ngl","tried it, can confirm, mid but works","no it's a trap don't do it 😭","10/10 would recommend to my worst enemy","surprisingly yes, i was shook too","depends how cooked you already are"]
 };
 const NAMES=["xX_voidwalker_Xx","brittany_no_h","ohioan_prime","just_some_guy","404namenotfound","grimace_survivor","ur_local_npc","sigmamale_2007","not_a_bot_fr","gigachad_jr","lilbro_lore","aura_points_only","certified_unc","skibidi_scientist","deluluqueen","ratio_dispenser","caffeine_demon","copium_addict_99","mewing_maxxer","npc_number_4"];
 const CM_AVCOL=["#ff2d78","#39ff14","#ffd400","#00e5ff","#a64dff","#ff6b00","#00ffaa","#ff0044"];
@@ -278,148 +301,219 @@ const TREND_STAT=["+9,400% this week","2.3B views and climbing","scientists can'
 
 function fill(t,topic){ return t.replace("{n}",topic.noun).replace("{s}",topic.subj).replace("{v}",topic.verb); }
 
-/* ============ COHERENT THREAD ENGINE ============ */
-function genThread(topicKey){
-  const topic=TOPICS[topicKey]; const tops=TOP[topicKey];
-  const n=5+ri(8); const thread=[]; const used=new Set();
-  function pickName(){ let nm,g=0; do{nm=rnd(NAMES);g++;}while(used.has(nm)&&g<5); used.add(nm); return nm; }
+/* creator "pinned" opener per topic — kicks off a real conversation */
+const OP_PIN={
+  meme:["ok be honest, how personally did this attack you 👇","who are you sending this to. name them 💀","tell me i'm lying. i'll wait","rate how cooked you are 1-10 in the replies"],
+  food:["drop your worst 2am kitchen crime below 👀","who's actually making this and who's just saving it","rating your snacks in the replies, go","hot or not: pineapple on this. fight"],
+  gym:["day 1 or day 47, no lying in the replies 💪","tell me your fake gym excuse for today","what's stopping you (be honest)","rep count or it didn't happen"],
+  pet:["name a more iconic menace, i'll wait 🐈","drop a pic of YOUR little gremlin below","he did nothing wrong. agree or agree?","rating everyone's pets in the replies"],
+  fit:["rate the fit 1-10, brutal honesty only 👗","where would you wear this. be specific","thrifted or splurge? guess in the replies","styling this for you in the comments, go"],
+  hack:["did this actually work for anyone or just me 👀","tell me why nobody teaches this in school","tag someone who NEEDS this","tried it? report back below"],
+  drama:["ok storytime in the replies, i need everyone's take 🍿","whose side are you on. explain","this is only chapter one btw","predict how this ends below"],
+  satisfy:["how many times did you replay this, be honest 🌀","what's YOUR comfort loop? drop it","did your brain go quiet too or just me","volume up or off? settle this"],
+  hot_take:["agree or absolutely not? no fence-sitting 🔥","defend the opposite in the replies, i dare you","this is either genius or a felony, decide","tell me why i'm wrong (you can't)"]
+};
+/* comments that react to the SPECIFIC meme on screen — {punch} = the punchline of
+   this meme's caption, {name} = the template. So the convo is about the actual pic. */
+const MEME_REACT=[
+  "NOT the '{punch}' part 😭 who hurt you (me. it's me)",
+  "'{punch}' is a personal attack and i'm reporting it",
+  "the '{punch}' line took me OUT 💀",
+  "ok who let {name} expose me like this for free",
+  "screenshotting the '{punch}' bit for evidence",
+  "'{punch}' >>> this is literally my whole personality",
+  "the {name} format never misses and this proves it",
+  "i felt '{punch}' in my SOUL, unfollowing (liking first)",
+  "why is '{punch}' the truest thing on this app today",
+  "tagging everyone who is '{punch}' (it's all of us)",
+  "'{punch}' had no business being this accurate",
+  "not me reading '{punch}' while literally doing it rn"
+];
+const MEME_PIN=[
+  "be honest — how hard did '{punch}' hit? 👇","tag the person who IS '{punch}' 💀",
+  "'{punch}' or you're lying to yourself. defend it below","rate '{punch}' 1-10 on the accuracy scale"
+];
+/* comments for the user's OWN uploaded photos — camera-roll energy, no captions */
+const USERPIC_REACT=[
+  "ok where was this taken 👀 the vibes are unreal",
+  "no context and somehow i love it more",
+  "this is actually a really good shot ngl",
+  "why is this weirdly nostalgic already",
+  "the lighting in this one 😮‍💨",
+  "story behind this? need the lore",
+  "framing this on my wall fr","the camera roll really said masterpiece",
+  "how do you have a shot this clean just sitting there","this one lives rent free now"
+];
+const USERPIC_PIN=[
+  "drop the story behind this one below 👇","rate this shot 1-10, be honest",
+  "what were we doing here 😭 i forgot","POV or context in the replies, go"
+];
+function stripAside(s){ return String(s||'').replace(/\s*\([^)]*\)\s*/g,' ').replace(/\s+/g,' ').trim(); }
+function memePunch(meme){ const c=meme.cap||[]; return stripAside(c[1]||c[0]||''); }
+
+/* ============ COHERENT THREAD ENGINE ============
+   Builds a real conversation ABOUT the pic: a pinned creator prompt, top comments that
+   react to this exact meme/photo, and replies that RESPOND (agree/argue/ask→answer). */
+function genThread(topicKey, meme){
+  const topic=TOPICS[topicKey];
+  let tops, pin;
+  if(meme && meme.user){                       // the user's own photo
+    tops=USERPIC_REACT; pin=USERPIC_PIN;
+  } else if(meme){                             // a specific meme template
+    const P=memePunch(meme)||meme.name;
+    const sub=t=>t.replace(/\{punch\}/g,P).replace(/\{name\}/g,meme.name);
+    tops=MEME_REACT.map(sub); pin=MEME_PIN.map(sub);
+  } else {                                     // a card post (topic-driven)
+    tops=TOP[topicKey]; pin=(OP_PIN[topicKey]||OP_PIN.meme);
+  }
+  const n=5+ri(7); const thread=[]; const used=new Set();
+  function pickName(){ let nm,g=0; do{nm=rnd(NAMES);g++;}while(used.has(nm)&&g<6); used.add(nm); return nm; }
+  const uniq=(arr,k)=>{ const s=arr.slice(); for(let z=s.length-1;z>0;z--){ const w=ri(z+1); const t=s[z]; s[z]=s[w]; s[w]=t; } return s.slice(0,Math.min(k,s.length)); };
+
+  // pinned creator comment starts the convo
+  thread.push({user:"creator",creator:true,verif:true,time:(1+ri(12))+'h',pinned:true,
+    text:rnd(pin),likes:2000+ri(40000),liked:false,replies:[]});
+
+  const topPool=uniq(tops, n);   // unique top comments so reactions don't repeat
   for(let i=0;i<n;i++){
-    const c={user:pickName(),verif:chance(.12),time:(1+ri(58))+(chance(.5)?'m':'h'),text:fill(rnd(tops),topic),likes:ri(12000),liked:false,replies:[]};
-    if(chance(.45)){
-      const stances=chance(.5)?["agree","relate","joke"]:["argue","ratio","joke"];
-      // build a unique pool of candidate reply texts from the chosen stances, shuffle, draw
-      let pool=[];
-      stances.forEach(st=>{ REPLY[st].forEach(txt=>pool.push(txt)); });
-      for(let z=pool.length-1;z>0;z--){ const w=ri(z+1); const tmp=pool[z]; pool[z]=pool[w]; pool[w]=tmp; }
-      const rc=Math.min(1+ri(3), pool.length);
-      for(let r=0;r<rc;r++){
-        c.replies.push({user:pickName(),verif:chance(.05),time:(1+ri(40))+'m',text:pool[r],likes:ri(1500),liked:false});
+    const c={user:pickName(),verif:chance(.12),time:(1+ri(58))+(chance(.5)?'m':'h'),
+      text:fill(topPool[i%topPool.length],topic),likes:ri(14000),liked:false,opLiked:chance(.18),replies:[]};
+    if(chance(.5)){
+      // pick a conversational shape so the replies read as a real exchange
+      const shapes=[["agree","joke"],["argue","ratio"],["relate","agree"],["ask","answer"],["joke","argue"]];
+      const [sa,sb]=rnd(shapes);
+      const pool=uniq(REPLY[sa].concat(REPLY[sb]), 1+ri(3));
+      pool.forEach((txt,r)=>{
+        const rep={user:pickName(),verif:chance(.05),time:(1+ri(40))+'m',text:txt,likes:ri(1800),liked:false,opLiked:chance(.1)};
+        c.replies.push(rep);
+      });
+      // occasional nested clap-back on the first reply = a real back-and-forth
+      if(c.replies.length && chance(.3)){
+        c.replies.push({user:pickName(),verif:false,time:(1+ri(20))+'m',
+          text:rnd(REPLY[chance(.5)?'joke':'ratio']),likes:ri(600),liked:false,nested:true});
       }
     }
     thread.push(c);
   }
+  // keep the pin on top; sort the rest by likes
+  const pinned=thread.shift();
   thread.sort((a,b)=>b.likes-a.likes);
+  thread.unshift(pinned);
   return thread;
 }
 
-/* ============ DEEP-FRY MEME ENGINE (v8) ============
-   Brainrot ≠ stock photos. Source = known imgflip meme TEMPLATES (stable hotlinks,
-   ACAO:* so canvas stays untainted). Every image is DEEP-FRIED on-device:
-   saturate/contrast/red-bias pixel crush + triple JPEG recompression at low quality
-   (the "fried" look is literally artifacts) + emoji bukkake + lens-flare + optional
-   Impact caption. Output is a data URL, so nothing downstream depends on the network.
-   If a template fails or taints, we fry the post's on-device canvas instead =
-   100% offline floor preserved. */
+/* ============ REAL MEME ENGINE (v10) ============
+   Real, recognizable memes — bundled LOCALLY in /img so they always render:
+   no external host, no CORS, no canvas taint, works offline. Each template is
+   paired with caption pairs written to FIT that specific meme, and rendered as a
+   plain <img> (contain-fit so the whole joke is visible) over a soft blurred
+   backdrop, with clean white Impact top/bottom text overlaid in HTML. */
 
-/* Stable imgflip template IDs (i.imgflip.com/{id}.jpg). Recognizable meme bases. */
-const FLIP_IDS=[181913649,87743020,112126428,124822590,131087935,61579,101470,4087833,
-  93895088,102156234,97984,1035805,89370399,438680,55311130,8072285,28251713,21735,
-  61532,5496396,16464531,100777631,180190441,247375501,135256802,123999232,129242436,
-  61585,61533,99683372,195515965,114054932,217743513,222403160,131940431,196652226,
-  155067746,79132341,148909805,309668311,252600902,226297822,224015000,148283541,
-  119139145,3218037,80707627,84341851,100947];
-/* Impact-style caption text per topic (top/bottom). Reuses topic vocabulary. */
-const FRY_CAP={
-  food:[["POV: it's 2am","the fridge is calling"],["nobody:","me reheating this 4th time"]],
-  gym:[["day 1 of locking in","day 2: gym is closed"],["one more rep","says the guy on rep 1"]],
-  pet:[["he did nothing wrong","ever, in his life"],["the audacity","is unmatched fr"]],
-  fit:[["fit check","passed (i decide)"],["thrifted the whole thing","flexing anyway"]],
-  hack:[["this ONE trick","doctors fear it"],["why did nobody","tell me this sooner"]],
-  drama:[["so anyway","here's the receipts"],["i'm not in this","but i AM watching"]],
-  satisfy:[["my brain when","the loop loops"],["watched 47 times","sending it to you"]],
-  hot_take:[["unpopular opinion","i'm just right tho"],["say it louder","for the unc in back"]]
-};
-function flipSrc(id){ return 'https://i.imgflip.com/'+id+'.jpg'; }
-function placeholdFallback(){ return 'https://placehold.co/360x640/151522/ff2d78?text=ROT'; }
+/* Each meme = a local template file + captions authored to make sense on THAT image.
+   cap = [topText, bottomText]; either half may be '' for one-liner memes. */
+const MEMES=[
+  {img:"drake",name:"Drake",caps:[
+    ["doing the thing i actually planned","reorganizing my whole playlist instead"],
+    ["going to bed at a normal hour","just one more video at 3am"],
+    ["touching grass","becoming one with the couch"],
+    ["reading the article","reading only the comments"]]},
+  {img:"fine",name:"This Is Fine",caps:[
+    ["my responsibilities piling up","this is fine"],
+    ["247 unread notifications","this is completely fine"],
+    ["me with 39 tabs open","everything is fine"]]},
+  {img:"rollsafe",name:"Roll Safe",caps:[
+    ["can't be tired at the gym","if you never actually go"],
+    ["can't fail the test","if you don't take it"],
+    ["can't lose the streak","if you never close the app"]]},
+  {img:"pigeon",name:"Is This A Pigeon",caps:[
+    ["","is this productivity? (it is hour three of scrolling)"],
+    ["","is this rest? (i have not stopped scrolling)"]]},
+  {img:"harold",name:"Hide the Pain Harold",caps:[
+    ["yeah i only checked my phone once today","(it was four hours)"],
+    ["no i'm not addicted to scrolling","(opens the app for the 9th time)"],
+    ["i'm doing great honestly","please believe me"]]},
+  {img:"disastergirl",name:"Disaster Girl",caps:[
+    ["me after saying 'ok last video'","three hours later"],
+    ["watching my to-do list burn","comfortably, from bed"],
+    ["me and my sleep schedule","both gone"]]},
+  {img:"success",name:"Success Kid",caps:[
+    ["opened the app for one specific thing","actually did the one thing"],
+    ["phone hit 1%","right as the video ended"]]},
+  {img:"fry",name:"Not Sure If",caps:[
+    ["not sure if actually tired","or just been scrolling too long"],
+    ["not sure if hungry","or just bored holding a phone"],
+    ["not sure if i chose this","or the algorithm chose for me"]]},
+  {img:"aag",name:"Ancient Aliens",caps:[
+    ["i can't explain my screen time","aliens"],
+    ["why am i always this tired","the algorithm"],
+    ["where my whole afternoon went","aliens did this"]]},
+  {img:"mordor",name:"One Does Not Simply",caps:[
+    ["one does not simply","watch just one video"],
+    ["one does not simply","leave the group chat"],
+    ["one does not simply","go to bed early"]]},
+  {img:"interesting",name:"Most Interesting Man",caps:[
+    ["i don't always touch grass","but when i do i post about it"],
+    ["i don't always sleep early","but when i do i scroll first anyway"]]},
+  {img:"kermit",name:"None Of My Business",caps:[
+    ["maybe you should get some sleep","but that's none of my business"],
+    ["maybe close the app for tonight","but that's none of my business"]]},
+  {img:"cmm",name:"Change My Mind",caps:[
+    ["","the feed knows me better than my friends do. change my mind"],
+    ["","'one more video' is never actually one more. change my mind"],
+    ["","the gym officially starts monday. change my mind"]]},
+  {img:"blb",name:"Bad Luck Brian",caps:[
+    ["finally closes the app","reopens it out of pure habit"],
+    ["deletes the app to focus","reinstalls it nine minutes later"],
+    ["swears he'll sleep early","it is now 3am"]]},
+  {img:"stonks",name:"Stonks",caps:[
+    ["five 'quick' minutes turned into five hours","stonks"],
+    ["replaced my entire sleep with scrolling","stonks"],
+    ["zero productivity achieved today","stonks"]]},
+  {img:"philosoraptor",name:"Philosoraptor",caps:[
+    ["if scrolling makes me this tired","am i resting or working"],
+    ["if the algorithm knows me best","who's really in charge here"],
+    ["if i save the recipe","does that count as cooking"]]},
+  {img:"yuno",name:"Y U No",caps:[
+    ["group chat","Y U NO reply"],
+    ["screen time","Y U NO go down"],
+    ["motivation","Y U NO show up today"]]},
+  {img:"grumpycat",name:"Grumpy Cat",caps:[
+    ["i had fun scrolling once","it was awful"],
+    ["they said 'just one video'","no."],
+    ["mondays","no."]]}
+];
+const MEME_HANDLES=["@memearchive","@daily.rot","@relatable.af","@nocontext.memes","@fyp.dump","@certified.meme","@brainrot.exe","@realones.only","@meme.dealer"];
+function pickMeme(){ const m=rnd(MEMES); return {name:m.name,cap:rnd(m.caps),src:'img/'+m.img+'.jpg'}; }
+/* harmonious color pairs for blobs + canvas so the visuals don't clash */
+const PALETTES=[["#ff2d78","#ffd400"],["#00e5ff","#a64dff"],["#39ff14","#00e5ff"],
+  ["#ff6b00","#ff2d78"],["#a64dff","#ff2d78"],["#00ffaa","#00e5ff"],["#ffd400","#ff6b00"],
+  ["#ff0044","#a64dff"],["#00e5ff","#39ff14"]];
+/* themed "oddly satisfying" canvas posts so the visual reads as a real thing */
+const SAT_THEMES=[
+  {lab:"🌀 KINETIC SAND CUT",kind:'slime'},{lab:"🎨 PAINT MIXING",kind:'plasma'},
+  {lab:"💧 SLIME ASMR",kind:'slime'},{lab:"🌈 GRADIENT LOOP",kind:'flow'},
+  {lab:"🫧 LAVA LAMP",kind:'plasma'},{lab:"🍭 GLASS BLENDING",kind:'flow'},
+  {lab:"🌊 LIQUID LOOP",kind:'plasma'},{lab:"🧊 GEL PRESS",kind:'slime'}];
 
-/* ---- the fry itself: takes a loaded HTMLImageElement OR a source canvas ---- */
-function deepFry(srcDrawable, w, h, capPair){
-  const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
-  const ctx=cv.getContext('2d');
-  // cover-fit draw
-  const sw=srcDrawable.width||srcDrawable.naturalWidth, sh=srcDrawable.height||srcDrawable.naturalHeight;
-  const scale=Math.max(w/sw,h/sh), dw=sw*scale, dh=sh*scale;
-  ctx.drawImage(srcDrawable,(w-dw)/2,(h-dh)/2,dw,dh);
-  // 1) pixel crush: saturate + contrast + red bias + posterize
-  let img;
-  try{ img=ctx.getImageData(0,0,w,h); }catch(e){ return null; } // tainted → bail to floor
-  const d=img.data;
-  for(let i=0;i<d.length;i+=4){
-    let r=d[i],g=d[i+1],b=d[i+2];
-    const avg=(r+g+b)/3;
-    // saturation push
-    r=avg+(r-avg)*2.0; g=avg+(g-avg)*2.0; b=avg+(b-avg)*2.0;
-    // contrast
-    r=(r-128)*1.5+128; g=(g-128)*1.5+128; b=(b-128)*1.5+128;
-    // red/orange bias (the classic deep-fry warmth)
-    r+=35; g+=8; b-=15;
-    // posterize a touch
-    r=Math.round(r/28)*28; g=Math.round(g/30)*30; b=Math.round(b/32)*32;
-    d[i]=r<0?0:r>255?255:r; d[i+1]=g<0?0:g>255?255:g; d[i+2]=b<0?0:b>255?255:b;
-  }
-  ctx.putImageData(img,0,0);
-  // 2) lens-flare blob
-  const fx=w*(0.2+Math.random()*0.6), fy=h*(0.15+Math.random()*0.5);
-  const fl=ctx.createRadialGradient(fx,fy,0,fx,fy,w*0.5);
-  fl.addColorStop(0,'rgba(255,240,180,0.55)'); fl.addColorStop(0.4,'rgba(255,120,0,0.18)'); fl.addColorStop(1,'rgba(255,0,0,0)');
-  ctx.globalCompositeOperation='screen'; ctx.fillStyle=fl; ctx.fillRect(0,0,w,h);
-  ctx.globalCompositeOperation='source-over';
-  // 3) emoji bukkake
-  const FRYMOJI=['💀','🔥','😭','👁️','🅱️','😂','‼️','🤣','👀','🥵'];
-  const n=4+Math.floor(Math.random()*5);
-  for(let k=0;k<n;k++){
-    const s=w*(0.12+Math.random()*0.22);
-    ctx.save(); ctx.translate(Math.random()*w,Math.random()*h); ctx.rotate((Math.random()-0.5)*1.4);
-    ctx.font=s+'px serif'; ctx.globalAlpha=0.55+Math.random()*0.45;
-    ctx.fillText(FRYMOJI[Math.floor(Math.random()*FRYMOJI.length)],-s/2,s/2);
-    ctx.restore();
-  }
-  ctx.globalAlpha=1;
-  // 4) Impact caption (optional)
-  if(capPair){
-    ctx.textAlign='center'; ctx.lineJoin='round';
-    const fs=Math.round(w*0.11);
-    ctx.font='900 '+fs+'px Impact,"Arial Black",sans-serif';
-    ctx.lineWidth=fs*0.16; ctx.strokeStyle='#000'; ctx.fillStyle='#fff';
-    const draw=(txt,y)=>{ txt=txt.toUpperCase(); ctx.strokeText(txt,w/2,y); ctx.fillText(txt,w/2,y); };
-    if(capPair[0]) draw(capPair[0], fs*1.05);
-    if(capPair[1]) draw(capPair[1], h-fs*0.5);
-  }
-  // 5) triple JPEG recompression — bakes in the fried artifacts
-  let url=cv.toDataURL('image/jpeg',0.12);
-  return url; // single pass already crunchy; data URL is self-contained
-}
-
-/* attachPhoto: load template → fry → set as <img>; on any failure fry the canvas floor */
-function attachPhoto(postEl, picId, topicKey){
-  const img=document.createElement('img');
-  img.className='photo ken'; img.alt=''; img.decoding='async';
-  const capRoll = chance(.6) ? rnd(FRY_CAP[topicKey]||FRY_CAP.satisfy) : null;
-  const src=new Image();
-  src.crossOrigin='anonymous';
-  let done=false;
-  function fryCanvasFloor(){
-    // fry the post's own animated canvas (a single frame of it) — always works, never tainted
-    const sat=postEl.querySelector('.satcanvas');
-    if(!sat){ img.remove(); return; }
-    if(sat._draw){ sat._draw(); } // ensure at least one frame is painted before snapshot
-    const fried=deepFry(sat,360,640,capRoll);
-    if(fried){ img.src=fried; postEl.dataset.full=deepFry(sat,720,1280,capRoll)||fried; postEl.appendChild(img); requestAnimationFrame(()=>img.classList.add('on')); }
-  }
-  src.onload=function(){
-    if(done)return; done=true;
-    const fried=deepFry(src,360,640,capRoll);
-    if(fried){
-      img.src=fried;
-      postEl.dataset.full=deepFry(src,720,1280,capRoll)||fried;
-      postEl.appendChild(img);
-      requestAnimationFrame(()=>img.classList.add('on'));
-    } else {
-      fryCanvasFloor(); // tainted: fall to floor
-    }
-  };
-  src.onerror=function(){ if(done)return; done=true; fryCanvasFloor(); };
-  src.src=flipSrc(picId);
+/* attachPhoto: real local meme as a plain <img> (no CORS, no canvas) with a blurred
+   backdrop + HTML Impact caption. Same-origin, so it just works. */
+function attachPhoto(postEl, meme){
+  const wrap=document.createElement('div'); wrap.className='memewrap';
+  const bg=document.createElement('img'); bg.className='photobg ken'; bg.decoding='async'; bg.alt='';
+  const im=document.createElement('img'); im.className='photo meme'; im.decoding='async'; im.alt=meme.name;
+  const cap=meme.cap||['',''];
+  let capHTML='';
+  if(cap[0]) capHTML+='<div class="memecap top">'+esc(cap[0])+'</div>';
+  if(cap[1]) capHTML+='<div class="memecap bot">'+esc(cap[1])+'</div>';
+  im.addEventListener('load',()=>{ bg.classList.add('on'); im.classList.add('on'); });
+  im.addEventListener('error',()=>{ wrap.remove(); }); // local: should never happen; canvas floor stays
+  bg.src=meme.src; im.src=meme.src;
+  wrap.appendChild(bg); wrap.appendChild(im);
+  wrap.insertAdjacentHTML('beforeend', capHTML);
+  const sat=postEl.querySelector('.satcanvas');
+  if(sat && sat.nextSibling) postEl.insertBefore(wrap, sat.nextSibling);
+  else postEl.appendChild(wrap);
+  postEl.dataset.full=meme.src;
 }
 
 /* ============ SATISFYING CANVAS VISUALS (on-device, always work) ============ */
@@ -493,6 +587,34 @@ setInterval(()=>{ secs++; let m=Math.floor(secs/60),s=secs%60; guiltEl.textConte
 function bump(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
 function addCoins(n){ coins+=n; coinsEl.textContent=coins.toLocaleString(); if(shopBal)shopBal.textContent=coins.toLocaleString(); bump(document.getElementById('coinsB')); SFX.coin(); }
 
+/* ============ user's own photos ============ */
+const userPics=[]; // object URLs for photos the user loads from their device (never uploaded)
+const MYPIC_CAPS=["from the camera roll 📸","found this in my photos","no context, just vibes","why do i have 3000 of these","the archive is deep","peak of my camera roll fr","this one lives rent free","screenshotting was worth it"];
+function addUserPics(fileList){
+  if(!fileList||!fileList.length) return;
+  let added=0;
+  for(const f of fileList){
+    if(!f.type || f.type.indexOf('image/')!==0) continue;
+    userPics.push(URL.createObjectURL(f)); added++;
+  }
+  if(!added){ toast("🤔 no images found in that pick"); return; }
+  const cnt=document.getElementById('picCount'); if(cnt) cnt.textContent=' '+userPics.length;
+  toast("📸 loaded "+added+" of your pics — they're in the feed now");
+  SFX.jackpot(); buzz([20,40,20]);
+  // surface a few immediately at the top so you see them right away
+  if(typeof feed!=='undefined' && feed){
+    for(let i=0;i<Math.min(4,added);i++){ const p=makePost(); feed.insertBefore(p,feed.firstChild); }
+    feed.scrollTop=0;
+  }
+}
+(function wireUserPics(){
+  const input=document.getElementById('picInput');
+  const open=()=>{ if(input) input.click(); };
+  const pb=document.getElementById('picsBtn'); if(pb) pb.addEventListener('click',open);
+  const gp=document.getElementById('gatePics'); if(gp) gp.addEventListener('click',e=>{ e.stopPropagation(); open(); });
+  if(input) input.addEventListener('change',()=>{ addUserPics(input.files); input.value=''; });
+})();
+
 /* ============ comments store ============ */
 const commentStore={};
 let postCounter=0;
@@ -501,52 +623,66 @@ let postCounter=0;
 function makePost(){
   const p=document.createElement('div'); p.className='post';
   const pid='p'+(postCounter++); p.dataset.pid=pid;
-  const topicKey=rnd(TOPIC_KEYS); const topic=TOPICS[topicKey];
-  p.dataset.topic=topicKey;
-  commentStore[pid]=genThread(topicKey);
 
-  const col1=rnd(COLORS), col2=rnd(COLORS);
-  const handle=rnd(HANDLES);
-  const cap=rnd(topic.cap);
-  const tags="#"+topicKey+" #"+rnd(A)+" #fyp #foryou #viral";
-
-  // decide layout: fried meme dominates (it's the point of v8); cards/satisfy fill gaps
+  // decide layout FIRST so caption / tags / comments can all cohere with it
   const roll=ri(100); let kind;
-  if(roll<60) kind='photo';
-  else if(roll<72) kind='satisfy';
-  else if(roll<82) kind='tabloid';
-  else if(roll<91) kind='hack';
+  if(roll<62) kind='photo';
+  else if(roll<74) kind='satisfy';
+  else if(roll<83) kind='tabloid';
+  else if(roll<92) kind='hack';
   else kind='trend';
 
-  // base satisfying canvas under everything (also the photo-fail floor)
-  const satKind=rnd(['plasma','slime','flow']);
+  // if the user loaded their own photos, weave them into the feed's photo slots
+  let userPic=null;
+  if(userPics.length && (kind==='photo' ? chance(.6) : chance(.22))){ kind='photo'; userPic=rnd(userPics); }
+
+  // pick the actual picture up front so the whole post — caption AND the comment
+  // thread — can be generated to react to THIS specific meme/photo.
+  const meme = kind==='photo' ? (userPic ? {name:'your photo',cap:null,src:userPic,user:true} : pickMeme()) : null;
+
+  // topic drives non-photo captions/threads; photo posts get a thread about the pic,
+  // satisfy posts stay on-theme so the caption/convo match the visual.
+  const topicKey = kind==='photo' ? 'meme' : kind==='satisfy' ? 'satisfy' : rnd(TOPIC_KEYS);
+  const topic=TOPICS[topicKey];
+  p.dataset.topic=topicKey;
+  commentStore[pid]=genThread(topicKey, meme);
+
+  // harmonious color pair for blobs + canvas (no more clashing randoms)
+  const pal=rnd(PALETTES); const col1=pal[0], col2=pal[1];
+  const handle = userPic ? "@you" : (kind==='photo' ? rnd(MEME_HANDLES) : rnd(HANDLES));
+  const cap = userPic ? rnd(MYPIC_CAPS) : rnd(topic.cap);
+  const tags = userPic ? "#mypics #real #memories #core #fyp"
+             : kind==='photo' ? "#meme #relatable #real #fyp #foryou"
+             : "#"+topicKey+" #"+rnd(A)+" #fyp #foryou #viral";
+
+  // base satisfying canvas under everything (also the photo-fail floor).
+  // 'satisfy' posts use a themed loop so the visual reads as an actual thing.
+  let satTheme=null, satKind;
+  if(kind==='satisfy'){ satTheme=rnd(SAT_THEMES); satKind=satTheme.kind; }
+  else { satKind=rnd(['plasma','slime','flow']); }
   makeSatCanvas(p,satKind,col1,col2);
 
   let overlay='';
-  let wantsPhoto=false, picId=0;
-  if(kind==='photo'){ wantsPhoto=true; }
-  else if(kind==='satisfy'){
-    overlay+='<div class="trendcard" style="top:auto;bottom:160px"><span class="lab">😌 ODDLY SATISFYING</span></div>';
+  if(kind==='satisfy'){
+    overlay+='<div class="trendcard" style="top:auto;bottom:160px"><span class="lab">'+esc(satTheme.lab)+'</span></div>';
   }
   else if(kind==='tabloid'){
-    wantsPhoto=chance(.4);
     overlay+='<div class="tabloid"><span class="kicker">'+rnd(TAB_KICK)+'</span><div class="head"><em>'+esc(rnd(CELEB))+'</em> '+rnd(TAB_VERB)+' '+esc(rnd(TAB_DOING))+'</div><div class="sub">'+rnd(TAB_SUB)+' '+rnd(EMO)+'</div></div>';
   }
   else if(kind==='hack'){
     const h=rnd(HACKS); let steps=''; h.s.forEach(st=>steps+='<li>'+esc(st)+'</li>');
     overlay+='<div class="hackcard"><span class="badge2">🧠 LIFE HACK</span><h3>'+esc(h.t)+'</h3><ol>'+steps+'</ol><div class="mind">'+esc(h.m)+'</div></div>';
   }
-  else {
+  else if(kind==='trend'){
     overlay+='<div class="trendcard"><span class="lab">'+rnd(TREND_LAB)+'</span><div class="big">'+esc(rnd(TREND_NAME))+'</div><div class="stat">'+esc(rnd(TREND_STAT))+'</div></div>';
   }
-
-  if(wantsPhoto){ picId=rnd(FLIP_IDS); }   // imgflip template id
+  // kind==='photo' intentionally has no card overlay — the meme/photo IS the content
 
   let inner='';
   inner+='<div class="vidlayer"><div class="blob" style="background:'+col1+';top:-10%;left:-10%"></div><div class="blob" style="background:'+col2+';bottom:-10%;right:-10%;animation-delay:-4.5s"></div></div>';
   inner+='<div class="scanline"></div>';
   inner+=overlay;
-  if(wantsPhoto){ inner+='<div class="expandHint">🔍 tap to expand</div>'; }
+  if(meme){ inner+='<div class="expandHint">🔍 tap to expand</div>'; }
   inner+='<div class="vignette"></div><div class="grain"></div>';
 
   const likeN=(ri(900)+50)+"."+ri(9)+"K";
@@ -565,7 +701,7 @@ function makePost(){
   while(wrap.firstChild){ p.appendChild(wrap.firstChild); }
   feed.appendChild(p);
 
-  if(wantsPhoto){ attachPhoto(p, picId, topicKey); }
+  if(meme){ attachPhoto(p, meme); }
 
   let lastTap=0;
   p.addEventListener('pointerup',e=>{
@@ -653,15 +789,23 @@ function renderComments(pid){
   list.forEach((c,i)=>{ h+=commentHTML(c,i,false,''); if(c.replies&&c.replies.length){ h+='<div class="cmReply">'; c.replies.forEach((r,j)=>{ h+=commentHTML(r,i,true,j); }); h+='</div>'; } });
   cmList.innerHTML=h;
 }
+/* stable per-user avatar color so the same person keeps the same color */
+function avColor(user){ let h=0; const s=String(user); for(let k=0;k<s.length;k++){ h=(h*31+s.charCodeAt(k))>>>0; } return CM_AVCOL[h%CM_AVCOL.length]; }
 function commentHTML(c,i,isReply,j){
-  const av='<div class="cmAv" style="background:'+rnd(CM_AVCOL)+'">'+esc((c.user[0]||'?').toUpperCase())+'</div>';
+  const col=c.creator?'#000':avColor(c.user);
+  const face=c.creator?'★':esc((c.user[0]||'?').toUpperCase());
+  const av='<div class="cmAv" style="background:'+col+(c.creator?';color:var(--gold)':'')+'">'+face+'</div>';
   const verif=c.verif?' <span class="verif">✔</span>':'';
+  const tag=c.creator?' <span class="crtag">Creator</span>':'';
+  const pin=c.pinned?'<span class="pinTag">📌 Pinned</span>':'';
+  const opBadge=c.opLiked?'<span class="opLk">❤️ Creator</span>':'';
   const idAttr='data-i="'+i+'"'+(isReply?(' data-j="'+j+'"'):'');
-  return '<div class="cm">'+av+'<div class="cmBody">'+
-    '<div class="cmUser">'+esc(c.user)+verif+'<span class="time">'+esc(c.time)+'</span></div>'+
+  return '<div class="cm'+(c.creator?' crComment':'')+'">'+av+'<div class="cmBody">'+
+    '<div class="cmUser">'+esc(c.user)+verif+tag+'<span class="time">'+esc(c.time)+'</span></div>'+
+    pin+
     '<div class="cmText">'+esc(c.text)+'</div>'+
     '<div class="cmMeta"><span class="lk'+(c.liked?' on':'')+'" data-act="cmlike" '+idAttr+'>'+(c.liked?'❤️':'🤍')+' <b class="lkn">'+c.likes.toLocaleString()+'</b></span>'+
-    '<span data-act="cmreply" '+idAttr+'>💬 reply</span></div>'+
+    '<span data-act="cmreply" '+idAttr+'>💬 reply</span>'+opBadge+'</div>'+
   '</div></div>';
 }
 function openComments(pid){ activePid=pid; renderComments(pid); commentsEl.classList.add('open'); cmList.scrollTop=0; SFX.pop(); buzz(12); }
