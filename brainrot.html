@@ -79,12 +79,12 @@
   .trendcard .big{font-weight:900; font-size:clamp(40px,15vw,120px); line-height:.85; letter-spacing:-2px; background:linear-gradient(90deg,var(--hot),var(--gold),var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 4px 16px #000);}
   .trendcard .stat{margin-top:12px; font-weight:800; font-size:16px; color:#fff; text-shadow:0 2px 8px #000;}
 
-  .caption{position:absolute; bottom:96px; left:12px; right:78px; font-size:16px; font-weight:700; text-shadow:0 2px 12px #000; z-index:5;}
+  .caption{position:absolute; bottom:calc(122px + env(safe-area-inset-bottom)); left:12px; right:78px; font-size:16px; font-weight:700; text-shadow:0 2px 12px #000; z-index:5;}
   .handle{font-size:14px; color:var(--cyan); margin-bottom:4px; font-weight:800;}
   .handle b{color:#fff;}
   .tags{font-size:13px; color:var(--gold); margin-top:5px; opacity:.95;}
 
-  .rail{position:absolute; right:7px; bottom:104px; display:flex; flex-direction:column; gap:15px; z-index:6;}
+  .rail{position:absolute; right:7px; bottom:calc(128px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:15px; z-index:6;}
   .rbtn{display:flex; flex-direction:column; align-items:center; gap:2px; font-size:11px; font-weight:800; cursor:pointer;}
   .ricon{width:46px; height:46px; border-radius:50%; background:#000a; display:flex; align-items:center; justify-content:center; font-size:23px; border:1px solid #ffffff22;}
   .liked .ricon{background:var(--hot); animation:pop .4s;}
@@ -237,6 +237,28 @@
   .stat{background:linear-gradient(135deg,#15151f,#1c1422); border:1px solid #ffffff1a; border-radius:14px; padding:14px;}
   .stat .sv{font-size:26px; font-weight:900; color:#fff;}
   .stat .sl{font-size:12px; color:#9aa; font-weight:800; margin-top:2px;}
+  /* bottom nav */
+  #nav{position:fixed; left:0; right:0; bottom:0; z-index:50; height:calc(52px + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom); display:flex; align-items:center; justify-content:space-around; background:linear-gradient(180deg,rgba(10,10,15,.55),rgba(10,10,15,.98)); backdrop-filter:blur(12px); border-top:1px solid #ffffff14;}
+  .navb{position:relative; background:none; border:none; color:#8a8a99; display:flex; flex-direction:column; align-items:center; gap:2px; font-size:10px; font-weight:800; cursor:pointer; flex:1; padding:4px 0;}
+  .navb .ni{font-size:22px; line-height:1;}
+  .navb.on{color:#fff;}
+  .navadd .ni{background:linear-gradient(90deg,var(--hot),var(--gold)); color:#000; width:46px; height:30px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow:0 0 16px var(--hot);}
+  .navbadge{position:absolute; top:0; right:calc(50% - 22px); background:var(--hot); color:#fff; font-size:9px; font-weight:900; min-width:15px; height:15px; border-radius:999px; display:none; align-items:center; justify-content:center; padding:0 3px;}
+  .navbadge.show{display:flex;}
+  /* discover + create sheets */
+  #discover,#create{position:fixed; inset:0; z-index:152; background:rgba(5,5,10,.98); display:none; flex-direction:column; padding:18px; padding-top:calc(24px + env(safe-area-inset-top)); overflow-y:scroll;}
+  #discover h2,#create h2{font-size:28px; font-weight:900; text-align:center; background:linear-gradient(90deg,var(--gold),var(--hot)); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:16px;}
+  .discGrid{display:grid; grid-template-columns:1fr 1fr; gap:11px; margin-bottom:20px;}
+  .discBtn{background:linear-gradient(135deg,#171722,#20182a); border:1px solid #ffffff1f; color:#fff; border-radius:16px; padding:20px 12px; font-size:16px; font-weight:900; cursor:pointer;}
+  .discBtn:active{transform:scale(.97);}
+  .discHead{font-weight:900; font-size:16px; margin-bottom:10px;}
+  #discTags{display:flex; flex-wrap:wrap; gap:8px;}
+  #discTags .dtag{background:#1c1c28; border:1px solid #ffffff1f; color:var(--gold); border-radius:999px; padding:8px 14px; font-weight:800; font-size:14px; cursor:pointer;}
+  .createBox{display:flex; flex-direction:column; gap:12px;}
+  #createText{width:100%; min-height:130px; background:#15151f; border:1px solid #ffffff22; border-radius:16px; padding:14px; color:#fff; font-size:17px; font-weight:600; resize:none; outline:none; font-family:inherit;}
+  .createRow{display:flex; align-items:center; justify-content:space-between;}
+  #createCount{color:#888; font-size:12px; font-weight:800;}
+  #createPost{width:100%;}
   #live .dot{width:7px; height:7px; border-radius:50%; background:var(--hot); animation:blink 1s steps(2,end) infinite;}
   @keyframes blink{50%{opacity:.15}}
   .winPop{position:fixed; left:8px; bottom:180px; z-index:55; background:linear-gradient(90deg,#1c1233,#2a1424); border:1px solid var(--gold); border-radius:12px; padding:8px 12px; font-size:12px; font-weight:800; color:#fff; box-shadow:0 6px 24px #000a; transform:translateX(-125%); transition:transform .45s cubic-bezier(.2,1.5,.3,1); max-width:74vw; pointer-events:none;}
@@ -264,7 +286,6 @@
   <div class="badge" id="coinsB">💎<span id="coins">0</span></div>
   <div class="badge">⏳<span id="guilt">0:00</span></div>
   <button class="badge" id="picsBtn">📁<span id="picCount"></span></button>
-  <button class="badge" id="likedBtn">❤️<span id="likedCount"></span></button>
   <button class="badge" id="soundBtn">🔊</button>
   <button class="badge" id="shopBtn">SHOP 🛒</button>
 </div>
@@ -279,7 +300,6 @@
   <button class="chip" data-f="game">🎮 Games</button>
   <button class="chip" data-f="mypics">📷 Mine</button>
   <button class="chip" data-f="spicy">🔥 Spicy</button>
-  <button class="chip" id="profileChip">👤 Me</button>
 </div>
 <div id="ticker"><div class="run" id="tickerRun"></div></div>
 <div id="jackbar"><div id="jackfill"></div><span id="jacklabel">🎰 JACKPOT 0%</span></div>
@@ -290,6 +310,39 @@
 <div id="burst"><div class="big" id="burstBig">+50</div><div class="sub" id="burstSub">COMBO!</div></div>
 
 <div id="feed"></div>
+
+<div id="nav">
+  <button class="navb on" data-nav="home"><span class="ni">🏠</span><span class="nl">Home</span></button>
+  <button class="navb" data-nav="discover"><span class="ni">🔍</span><span class="nl">Discover</span></button>
+  <button class="navb navadd" data-nav="post"><span class="ni">➕</span></button>
+  <button class="navb" data-nav="activity"><span class="ni">❤️</span><span class="nl">Activity</span><span class="navbadge" id="navActBadge"></span></button>
+  <button class="navb" data-nav="me"><span class="ni">👤</span><span class="nl">Me</span></button>
+</div>
+
+<div id="discover">
+  <span class="sheetclose" id="discoverClose">✕</span>
+  <h2>🔍 DISCOVER</h2>
+  <div class="discGrid">
+    <button class="discBtn" data-f="all">🌀 Everything</button>
+    <button class="discBtn" data-f="meme">😹 Memes</button>
+    <button class="discBtn" data-f="game">🎮 Gameplay</button>
+    <button class="discBtn" data-f="spicy">🔥 Spicy Takes</button>
+    <button class="discBtn" data-f="mypics">📷 My Pics</button>
+  </div>
+  <div class="discHead">🔥 Trending now</div>
+  <div id="discTags"></div>
+</div>
+
+<div id="create">
+  <span class="sheetclose" id="createClose">✕</span>
+  <h2>➕ NEW POST</h2>
+  <div class="createBox">
+    <textarea id="createText" placeholder="drop a hot take, a thought, pure brainrot…" maxlength="140"></textarea>
+    <div class="createRow"><button class="chip" id="createPhoto">📷 add a photo instead</button><span id="createCount">0/140</span></div>
+    <button class="spinBtn" id="createPost">POST IT 🚀</button>
+    <div class="ftxt">your post drops to the top of your feed as @you</div>
+  </div>
+</div>
 
 <div id="viewer"><span class="vclose" id="vClose">✕</span><span class="vload">loading full image…</span><img id="vImg" alt=""></div>
 
@@ -890,6 +943,10 @@ async function aiAnalyzePost(pid){
 
 /* ============ SATISFYING CANVAS VISUALS (on-device, always work) ============ */
 const liveCanvases=new Set();
+/* only animate canvases that are on (or near) screen — off-screen ones idle.
+   This is what keeps the app from melting after many posts. */
+let _canvasObs=null;
+function canvasObs(){ if(!_canvasObs){ _canvasObs=new IntersectionObserver(function(es){ es.forEach(function(e){ e.target._on=e.isIntersecting; }); },{root:feed, rootMargin:'120px 0px', threshold:0}); } return _canvasObs; }
 function makeSatCanvas(post,kind,col1,col2){
   const cv=document.createElement('canvas');
   cv.className='satcanvas'; cv.width=180; cv.height=320;  // small buffer, scaled by CSS = cheap
@@ -899,6 +956,7 @@ function makeSatCanvas(post,kind,col1,col2){
   const c1=hexRGB(col1), c2=hexRGB(col2);
   let t=ri(1000);
   const state={cv,ctx,kind,W,H,c1,c2,t,running:true};
+  cv._on=true;
   cv._draw=function(){
     if(!state.running) return;
     state.t+=0.03;
@@ -908,6 +966,7 @@ function makeSatCanvas(post,kind,col1,col2){
     else drawFlow(state);
   };
   liveCanvases.add(cv);
+  try{ canvasObs().observe(cv); }catch(e){}
   return cv;
 }
 function hexRGB(h){ h=h.replace('#',''); return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)]; }
@@ -980,7 +1039,7 @@ function drawBlocks(s){
   for(let i=0;i<4;i++){ const sy=(t*260+i*70)%H; ctx.beginPath(); ctx.moveTo(px-12,sy); ctx.lineTo(px-34,sy); ctx.stroke(); }
 }
 /* single rAF loop drives all visible canvases (perf) */
-function tickCanvases(){ liveCanvases.forEach(cv=>{ if(cv.isConnected && cv._draw) cv._draw(); else liveCanvases.delete(cv); }); requestAnimationFrame(tickCanvases); }
+function tickCanvases(){ liveCanvases.forEach(cv=>{ if(!cv.isConnected){ liveCanvases.delete(cv); return; } if(cv._on && cv._draw) cv._draw(); }); requestAnimationFrame(tickCanvases); }
 requestAnimationFrame(tickCanvases);
 
 /* ============ state ============ */
@@ -1097,7 +1156,7 @@ function bumpStat(k,n){ stats[k]=(stats[k]||0)+(n||1); saveStats(); }
 
 let likedStore=[]; try{ likedStore=JSON.parse(localStorage.getItem('scrollz_liked')||'[]'); }catch(e){ likedStore=[]; }
 function saveLiked(){ try{ localStorage.setItem('scrollz_liked', JSON.stringify(likedStore.slice(0,200))); }catch(e){} }
-function updateLikedBadge(){ const b=document.getElementById('likedCount'); if(b) b.textContent=likedStore.length?(' '+likedStore.length):''; }
+function updateLikedBadge(){ const b=document.getElementById('likedCount'); if(b) b.textContent=likedStore.length?(' '+likedStore.length):''; const nb=document.getElementById('navActBadge'); if(nb){ if(likedStore.length){ nb.textContent=likedStore.length>99?'99+':likedStore.length; nb.classList.add('show'); } else nb.classList.remove('show'); } }
 function addLiked(e){ e.ts=Date.now(); e.id='lk'+e.ts+'_'+ri(9999); likedStore.unshift(e); saveLiked(); updateLikedBadge(); }
 function removeLiked(kind,pid,text){ const i=likedStore.findIndex(e=>e.kind===kind&&e.pid===pid&&(text===undefined||e.text===text)); if(i>=0){ likedStore.splice(i,1); saveLiked(); updateLikedBadge(); } }
 function ago(ts){ const s=(Date.now()-ts)/1000; if(s<60)return'just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
@@ -1436,9 +1495,25 @@ const obs=new IntersectionObserver(function(es){
       if(postsSeen%12===0){ burst('🎁','MYSTERY DROP! +100'); addCoins(100); buzz([15,30,60]); SFX.mystery(); pushTicker('🎁 you snagged a mystery +100 💎'); }
       const all=feed.children;
       if([].indexOf.call(all,e.target) > all.length-4){ grow(6); }
+      pruneFeed();
     }
   });
 },{threshold:.6});
+/* keep the DOM bounded — drop posts far above the current one so memory/canvas
+   count stays small (this + off-screen idle canvases is what stops the crash). */
+function pruneFeed(){
+  const vh=feed.clientHeight||1;
+  let guard=0;
+  while(feed.children.length>22 && guard++<8){
+    const idx=Math.round(feed.scrollTop/vh);
+    if(idx<=10) break;                 // always keep ~10 posts above the active one
+    const first=feed.firstChild; if(!first) break;
+    const h=first.offsetHeight||vh;
+    first.querySelectorAll('canvas').forEach(c=>liveCanvases.delete(c));
+    feed.removeChild(first);
+    feed.scrollTop-=h;                 // keep the current post visually in place
+  }
+}
 function observeAll(){ [].forEach.call(feed.children,function(p){obs.observe(p);}); }
 new MutationObserver(observeAll).observe(feed,{childList:true});
 observeAll();
@@ -1472,7 +1547,7 @@ document.getElementById('shopBtn').addEventListener('click',function(){ shop.sty
 document.getElementById('shopClose').addEventListener('click',function(){ shop.style.display='none'; SFX.swoosh(); });
 
 /* ============ Liked sheet ============ */
-document.getElementById('likedBtn').addEventListener('click',openLiked);
+(function(){ const lb=document.getElementById('likedBtn'); if(lb) lb.addEventListener('click',openLiked); })();
 document.getElementById('likedClose').addEventListener('click',function(){ document.getElementById('liked').style.display='none'; SFX.close(); });
 document.getElementById('likedClear').addEventListener('click',function(){ likedStore=[]; saveLiked(); updateLikedBadge(); renderLiked(); SFX.swoosh(); });
 document.getElementById('likedList').addEventListener('click',function(e){
@@ -1521,6 +1596,65 @@ function openProfile(){
   document.getElementById('profile').style.display='flex'; SFX.open();
 }
 document.getElementById('profileClose').addEventListener('click',function(){ document.getElementById('profile').style.display='none'; SFX.close(); });
+
+/* ============ bottom nav ============ */
+function closeSheets(){ ['shop','liked','profile','discover','create'].forEach(function(id){ const el=document.getElementById(id); if(el) el.style.display='none'; }); }
+function setNav(n){ [].forEach.call(document.querySelectorAll('#nav .navb'),function(b){ b.classList.toggle('on', b.dataset.nav===n); }); }
+document.getElementById('nav').addEventListener('click',function(e){
+  const b=e.target.closest('.navb'); if(!b) return; const n=b.dataset.nav; SFX.tap(); buzz(8);
+  if(n==='home'){ closeSheets(); setNav('home'); feed.scrollTo({top:0,behavior:'smooth'}); if(feedMode!=='foryou'||feedFilter!=='all'){ feedMode='foryou'; feedFilter='all'; syncNavbar(); applyFeed(); } }
+  else if(n==='discover'){ closeSheets(); renderDiscover(); document.getElementById('discover').style.display='flex'; setNav('discover'); SFX.open(); }
+  else if(n==='post'){ closeSheets(); document.getElementById('create').style.display='flex'; setNav('post'); setTimeout(()=>document.getElementById('createText').focus(),100); SFX.open(); }
+  else if(n==='activity'){ closeSheets(); openLiked(); setNav('activity'); }
+  else if(n==='me'){ closeSheets(); openProfile(); setNav('me'); }
+});
+// closing any sheet returns nav highlight to Home
+['shopClose','likedClose','profileClose','discoverClose','createClose'].forEach(function(id){ const el=document.getElementById(id); if(el) el.addEventListener('click',function(){ setNav('home'); }); });
+function syncNavbar(){ [].forEach.call(document.querySelectorAll('#navbar .tab'),x=>x.classList.toggle('on',x.dataset.mode===feedMode)); [].forEach.call(document.querySelectorAll('#navbar .chip[data-f]'),x=>x.classList.toggle('on',x.dataset.f===feedFilter)); const lv=document.getElementById('live'); if(lv) lv.style.display=(feedMode==='live')?'flex':'none'; }
+
+/* ============ discover sheet ============ */
+function renderDiscover(){
+  const wrap=document.getElementById('discTags');
+  const tags=[]; for(let i=0;i<10;i++){ tags.push('#'+(chance(.5)?rnd(A):rnd(TREND_NAME).toLowerCase())); }
+  wrap.innerHTML=[...new Set(tags)].map(t=>'<span class="dtag">'+esc(t)+'</span>').join('');
+}
+document.getElementById('discoverClose').addEventListener('click',function(){ document.getElementById('discover').style.display='none'; SFX.close(); });
+document.getElementById('discover').addEventListener('click',function(e){
+  const btn=e.target.closest('.discBtn'), tag=e.target.closest('.dtag');
+  if(btn){ feedFilter=btn.dataset.f; feedMode='foryou'; syncNavbar(); applyFeed(); document.getElementById('discover').style.display='none'; setNav('home'); toast('showing: '+btn.textContent.trim()); }
+  else if(tag){ feedFilter='spicy'; feedMode='foryou'; syncNavbar(); applyFeed(); document.getElementById('discover').style.display='none'; setNav('home'); toast('diving into '+tag.textContent); }
+});
+
+/* ============ create post ============ */
+function createUserPost(text, picId){
+  const pid='p'+(postCounter++);
+  const pal=rnd(PALETTES), col1=pal[0], col2=pal[1];
+  const meme = picId!=null?{name:'your photo',cap:null,user:true,picId:picId}:null;
+  const thread=genThread('meme', meme);
+  let kind, overlay='', satKind=rnd(['plasma','slime','flow']);
+  if(meme){ kind='photo'; }
+  else { kind='mine'; overlay='<div class="trendcard"><span class="lab">🗣️ YOUR POST</span><div class="big" style="font-size:clamp(24px,7.5vw,42px);letter-spacing:-1px;line-height:1.05">'+esc(text)+'</div></div>'; }
+  const spec={pid,kind,topicKey:'meme',emoji:'🗣️',col1,col2,handle:'@you',cap:(text||'my photo').slice(0,90),tags:'#me #mypost #real #fyp #foryou',
+    satKind,overlay,meme,thread,poll:null,wyr:null,live:false,viewers:0,likeN:'0',cmN:''+thread.length,shareN:'0',userLiked:false,userSaved:false};
+  const p=makePost(null, spec);
+  feed.insertBefore(p, feed.firstChild); feed.scrollTop=0;
+  feedSpecs.push(spec); if(feedSpecs.length>FEED_CAP) feedSpecs.shift(); saveFeed();
+  bumpStat('comments');
+  // the internet reacts to your post
+  setTimeout(function(){ if(chance(.7)){ toast('👀 your post is getting comments'); } }, 1200);
+}
+(function(){
+  const ta=document.getElementById('createText'), cnt=document.getElementById('createCount');
+  if(ta) ta.addEventListener('input',function(){ cnt.textContent=ta.value.length+'/140'; });
+  document.getElementById('createClose').addEventListener('click',function(){ document.getElementById('create').style.display='none'; SFX.close(); });
+  document.getElementById('createPhoto').addEventListener('click',function(){ document.getElementById('create').style.display='none'; setNav('home'); const inp=document.getElementById('picInput'); if(inp) inp.click(); });
+  document.getElementById('createPost').addEventListener('click',function(){
+    const v=(ta.value||'').trim(); if(!v){ toast('type something first 👀'); return; }
+    createUserPost(v); ta.value=''; cnt.textContent='0/140';
+    document.getElementById('create').style.display='none'; setNav('home');
+    addCoins(10); SFX.jackpot(); buzz([20,40,20]); confetti(); toast('🚀 posted to your feed! +10 gems'); pushTicker('🗣️ you posted: '+v.slice(0,30));
+  });
+})();
 [].forEach.call(document.querySelectorAll('.buy'),function(b){
   b.addEventListener('click',function(){
     const g=parseInt(b.dataset.gems,10);
@@ -1577,7 +1711,7 @@ const GATE_TAGS=[
 /* ============ PWA: install + keep the home-screen app on the newest version ============
    The service worker is NETWORK-FIRST, so every online launch pulls the latest build
    and only falls back to cache when offline — the app can't get stuck on an old version. */
-const APP_VERSION='v19';
+const APP_VERSION='v20';
 (function(){ const v=document.getElementById('verTag'); if(v) v.textContent='SCROLLZ '+APP_VERSION; })();
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){

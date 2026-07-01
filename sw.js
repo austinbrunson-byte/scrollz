@@ -1,7 +1,7 @@
 /* SCROLLZ service worker — NETWORK-FIRST so the app always updates when online,
    and still works offline by falling back to the last cached copy.
    Bump SW_VERSION whenever you ship a new build to force a fresh cache. */
-const SW_VERSION = 'scrollz-v19';
+const SW_VERSION = 'scrollz-v20';
 const CORE = [
   './brainrot.html',
   './manifest.webmanifest',
