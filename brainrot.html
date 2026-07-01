@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob:; connect-src 'self' data: blob:; manifest-src 'self'; worker-src 'self' blob:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob:; connect-src 'self' data: blob: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net; manifest-src 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net;">
 <title>SCROLLZ™</title>
 <!-- PWA / iPhone home-screen app -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -198,6 +198,7 @@
   <div class="badge" id="coinsB">💎<span id="coins">0</span></div>
   <div class="badge">⏳<span id="guilt">0:00</span></div>
   <button class="badge" id="picsBtn">📁<span id="picCount"></span></button>
+  <button class="badge" id="soundBtn">🔊</button>
   <button class="badge" id="shopBtn">SHOP 🛒</button>
 </div>
 
@@ -234,27 +235,77 @@
 </div>
 
 <script>
-/* ============ AUDIO ============ */
-let AC=null;
-function initAudio(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==='suspended'){ AC.resume(); } }
+/* ============ AUDIO — satisfying synth, iPhone-friendly ============ */
+let AC=null, master=null, _audioUnlocked=false, _silentEl=null;
+let soundOn=true; try{ soundOn=localStorage.getItem('scrollz_sound')!=='0'; }catch(e){}
+/* a tiny silent WAV kept looping in the MEDIA channel so sound plays even when the
+   iPhone's mute/ring switch is ON (pure WebAudio otherwise obeys the mute switch). */
+function silentWavURL(){
+  const sr=8000,len=(sr*0.4)|0,buf=new ArrayBuffer(44+len*2),v=new DataView(buf);
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+  w(0,'RIFF');v.setUint32(4,36+len*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);
+  v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);
+  v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,len*2,true);
+  return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+}
+function initAudio(){
+  if(!soundOn) return;
+  try{
+    if(!AC){
+      AC=new (window.AudioContext||window.webkitAudioContext)();
+      master=AC.createGain(); master.gain.value=0.9;
+      const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=9500;
+      master.connect(lp); lp.connect(AC.destination);
+    }
+    if(AC.state==='suspended') AC.resume();
+    if(!_audioUnlocked){
+      _audioUnlocked=true;
+      try{ const b=AC.createBuffer(1,1,22050), s=AC.createBufferSource(); s.buffer=b; s.connect(AC.destination); s.start(0); }catch(e){}
+      try{ if(!_silentEl){ _silentEl=new Audio(silentWavURL()); _silentEl.loop=true; _silentEl.volume=0.02; _silentEl.setAttribute('playsinline',''); } _silentEl.play().catch(()=>{}); }catch(e){}
+    }
+  }catch(e){}
+}
 function tone(freq,dur,type,vol,slideTo){
-  if(!AC)return; type=type||'sine'; vol=vol||.2;
-  const o=AC.createOscillator(), g=AC.createGain();
-  o.type=type; o.frequency.value=freq;
-  if(slideTo){ try{o.frequency.exponentialRampToValueAtTime(slideTo,AC.currentTime+dur);}catch(e){} }
-  g.gain.value=vol; g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+dur);
-  o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+dur);
+  if(!AC||!soundOn) return; type=type||'sine'; vol=(vol==null?.2:vol);
+  const now=AC.currentTime, o=AC.createOscillator(), g=AC.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq,now);
+  if(slideTo){ try{o.frequency.exponentialRampToValueAtTime(slideTo,now+dur);}catch(e){} }
+  g.gain.setValueAtTime(.0001,now);
+  g.gain.exponentialRampToValueAtTime(vol,now+0.01);
+  g.gain.exponentialRampToValueAtTime(.0001,now+dur);
+  o.connect(g); g.connect(master||AC.destination); o.start(now); o.stop(now+dur+0.02);
+}
+function noise(dur,vol,hp){
+  if(!AC||!soundOn) return; const now=AC.currentTime, n=Math.max(1,(AC.sampleRate*dur)|0);
+  const b=AC.createBuffer(1,n,AC.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+  const s=AC.createBufferSource(); s.buffer=b;
+  const f=AC.createBiquadFilter(); f.type='highpass'; f.frequency.value=hp||2000;
+  const g=AC.createGain(); g.gain.setValueAtTime(vol||.12,now); g.gain.exponentialRampToValueAtTime(.0001,now+dur);
+  s.connect(f); f.connect(g); g.connect(master||AC.destination); s.start(now); s.stop(now+dur+0.02);
 }
 const SFX={
-  pop(){ tone(420,.12,'triangle',.25,820); },
-  coin(){ tone(880,.08,'square',.18); setTimeout(()=>tone(1320,.12,'square',.18),60); },
-  tick(){ tone(1200,.03,'square',.12); },
-  swoosh(){ tone(300,.18,'sawtooth',.10,90); },
-  like(){ tone(660,.1,'sine',.22,1100); },
-  jackpot(){ [523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone(f,.22,'triangle',.22),i*90)); },
-  buy(){ [392,523,659].forEach((f,i)=>setTimeout(()=>tone(f,.18,'square',.2),i*70)); },
-  drop(){ tone(180,.5,'sine',.25,1400); }
+  tap(){ tone(880,.05,'sine',.12,1180); noise(.012,.035,4200); },       // any button
+  snap(){ tone(300,.09,'sine',.12,540); noise(.02,.05,2600); },         // scroll into a post
+  swoosh(){ noise(.16,.09,1100); tone(320,.16,'sine',.05,120); },
+  pop(){ tone(520,.13,'triangle',.26,900); noise(.025,.06,3200); },
+  like(){ tone(720,.09,'sine',.22,1200); setTimeout(()=>tone(1080,.12,'triangle',.18,1500),45); },
+  sparkle(){ [1200,1600,2100,2600].forEach((f,i)=>setTimeout(()=>tone(f,.10,'sine',.11),i*45)); },
+  combo(n){ const base=520+Math.min(n,9)*70; tone(base,.10,'triangle',.2,base*1.5); noise(.02,.05,3200); },
+  coin(){ tone(988,.07,'square',.15,1319); setTimeout(()=>tone(1319,.12,'triangle',.15),60); },
+  buy(){ [392,523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.16,'square',.17),i*60)); },
+  jackpot(){ [523,659,784,1046,1318,1568].forEach((f,i)=>setTimeout(()=>tone(f,.20,'triangle',.2),i*80)); },
+  streak(){ [659,880,1108,1318].forEach((f,i)=>setTimeout(()=>tone(f,.16,'triangle',.2),i*70)); },
+  mystery(){ [440,554,659,880,1174].forEach((f,i)=>setTimeout(()=>tone(f,.18,'sine',.19),i*70)); noise(.2,.05,1500); },
+  tick(){ tone(1400,.025,'square',.09); },
+  open(){ tone(500,.12,'sine',.16,760); },
+  close(){ tone(620,.12,'sine',.14,300); },
+  send(){ tone(700,.08,'sine',.18,1000); setTimeout(()=>tone(1200,.1,'triangle',.16),50); },
+  drop(){ tone(200,.5,'sine',.22,1500); }
 };
+function toggleSound(){ soundOn=!soundOn; try{ localStorage.setItem('scrollz_sound',soundOn?'1':'0'); }catch(e){}
+  if(soundOn){ initAudio(); SFX.pop(); } else if(_silentEl){ try{_silentEl.pause();}catch(e){} }
+  const b=document.getElementById('soundBtn'); if(b) b.textContent=soundOn?'🔊':'🔇'; }
 
 /* ============ helpers ============ */
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
@@ -406,6 +457,43 @@ function analyzePic(img){
     return traits;
   }catch(e){ return []; }
 }
+/* ---- on-device VISION AI: what's actually IN the photo ----
+   A small CLIP model (runs in the browser, nothing uploaded) scores each photo
+   against these concepts; the top match drives a convo about the real content. */
+const AI_LABELS=[
+  ["a photo of a dog","dog"],["a photo of a cat","cat"],["a photo of a pet animal","pet"],
+  ["a plate of food or a meal","food"],["a photo of a coffee or a drink","drink"],
+  ["a close-up selfie of a person's face","selfie"],["a photo of a group of people","people"],
+  ["a screenshot of a text message conversation","texts"],["a screenshot of a social media app","social"],
+  ["a funny meme with big text","meme"],["a screenshot from a video game","game"],
+  ["a nature landscape with mountains or trees","nature"],["a sunset or a colorful sky","sky"],
+  ["a beach or the ocean","beach"],["a city street or tall buildings","city"],
+  ["a photo of a car or vehicle","car"],["a screenshot of a document, note, or receipt","doc"],
+  ["a concert or event with a crowd","event"],["a close-up of a flower or plant","plant"],
+  ["a photo of an outfit or clothing","outfit"]
+];
+const AI_CONCEPT={
+  dog:{c:["the DOG. that's it that's the comment 🐶","he's so him, i'd die for him","the little guy said hi to the whole feed","protect at all costs 🫡","ok the ears in this one 😭"],p:["what's the dog's name 👇 i must know","rate this good boy 1-10 (it's a 10)"]},
+  cat:{c:["the cat is judging all of us and he's right","he KNOWS he runs the house","not the little beans 😭","this cat has never worked a day, iconic","the audacity in his eyes"],p:["cat tax accepted 🐈 what's his name?","is he plotting something? be honest"]},
+  pet:{c:["ok the little guy is everything 🐾","i would commit crimes for this animal","instant serotonin ngl","the main character fr"],p:["name + age of this legend 👇","rate the pet 1-10"]},
+  food:{c:["why did you post this when i'm STARVING 😭","the plating is actually clean","need the recipe immediately 🙏","this is illegal to show on an empty stomach","10/10 would demolish"],p:["homemade or bought? be honest 👇","rate the meal 1-10"]},
+  drink:{c:["the little drink 🥤 living well i see","caffeine core","this looks so refreshing rude","aesthetic sip fr"],p:["what is it and was it worth it? 👇"]},
+  selfie:{c:["ok SERVING, who said you could 😤","the confidence is inspiring","main character behavior","unfollowing, too powerful 💅","the lighting loves you"],p:["rate the selfie 1-10, hype only 👇","caption this for them below"]},
+  people:{c:["the whole squad made it 🫶","group photo energy is unmatched","everyone ate here fr","who's the one that took it (respect)","core memory unlocked"],p:["name everyone in the replies 👇","who's the main character here?"]},
+  texts:{c:["not the SCREENSHOT of the texts 💀 spill","we're reading these together, context now","the way you kept receipts 😭","who is 'they' and what did they do","this is about to be an essay in replies"],p:["ok drop the context, we need the whole story 👇","who texted that 💀 explain"]},
+  social:{c:["screenshotting the timeline again i see 👀","no context but i trust it","the algorithm sent you here for a reason","saved this for later and never looked, relatable"],p:["why'd this one make the camera roll? 👇"]},
+  meme:{c:["ok this one's actually funny 😭","stealing this immediately","the meme folder is deep i see","sending this to the group chat","certified repost material"],p:["where'd you find this 👇 need the source","rate the meme 1-10"]},
+  game:{c:["the GAMEPLAY 🎮 what game is this","clean run ngl","the loading screen or a real clip?? 👀","brainrot fuel detected","frames looking crispy"],p:["what game + are you any good? 👇","rate the run 1-10"]},
+  nature:{c:["ok this is genuinely beautiful 🏔️","touched grass and documented it, proud","the view is unreal","screensaver material fr","nature ate here"],p:["where is this 👇 adding to my list","rate the view 1-10"]},
+  sky:{c:["the SKY said be dramatic 🌅","this looks fake it's so pretty","sunset supremacy","the colors are unreal ngl","ok photographer 📸"],p:["what time was this? the colors 😮‍💨 👇"]},
+  beach:{c:["beach day rights 🏖️ jealous","the water is so clear rude","take me with you next time 😭","salt water heals fr"],p:["where's this beach 👇 need coords"]},
+  city:{c:["the city looks alive here 🌆","concrete jungle core","this is giving movie establishing shot","the skyline ate"],p:["what city is this? 👇"]},
+  car:{c:["ok the WHIP 🚗 that's clean","car people are gonna find this post","the detailing though","vroom (respectfully)"],p:["make + model in the replies 👇","rate the car 1-10"]},
+  doc:{c:["screenshotting important info again i see 📄","the 'i'll deal with this later' folder strikes","responsible king/queen behavior","bookmarking a screenshot, we've all done it"],p:["did you ever actually deal with this? 👇"]},
+  event:{c:["the CROWD 🎤 this looks unreal","live music core, jealous","the energy is jumping through the screen","who was performing 👀"],p:["what event was this and was it worth it? 👇"]},
+  plant:{c:["the little plant 🌿 thriving","green thumb behavior","this is so calming actually","plant parent core"],p:["what plant is this 👇 mine keep dying"]},
+  outfit:{c:["ok the FIT 🔥 rate incoming","the drip is immaculate","where's this from 👀","serving and i respect it","fit check PASSED"],p:["rate the fit 1-10, brutal honesty 👇","where's the top from?"]}
+};
 function stripAside(s){ return String(s||'').replace(/\s*\([^)]*\)\s*/g,' ').replace(/\s+/g,' ').trim(); }
 function memePunch(meme){ const c=meme.cap||[]; return stripAside(c[1]||c[0]||''); }
 
@@ -416,11 +504,17 @@ function genThread(topicKey, meme){
   const topic=TOPICS[topicKey];
   let tops, pin;
   if(meme && meme.user){                       // the user's own photo
-    const tr=(meme.traits&&meme.traits.length)?meme.traits:['generic'];
-    let pool=[]; tr.forEach(k=>{ if(USERPIC_TRAIT[k]) pool=pool.concat(USERPIC_TRAIT[k]); });
-    tops=pool.concat(USERPIC_TRAIT.generic);
-    pin=USERPIC_PIN_TRAIT.generic;
-    for(const k of tr){ if(USERPIC_PIN_TRAIT[k]){ pin=USERPIC_PIN_TRAIT[k]; break; } }
+    if(meme.concept && AI_CONCEPT[meme.concept]){   // AI knows what's IN the photo
+      const cc=AI_CONCEPT[meme.concept];
+      tops=cc.c.concat(USERPIC_TRAIT.generic.slice(0,3));
+      pin=cc.p;
+    } else {                                        // fall back to look-based traits
+      const tr=(meme.traits&&meme.traits.length)?meme.traits:['generic'];
+      let pool=[]; tr.forEach(k=>{ if(USERPIC_TRAIT[k]) pool=pool.concat(USERPIC_TRAIT[k]); });
+      tops=pool.concat(USERPIC_TRAIT.generic);
+      pin=USERPIC_PIN_TRAIT.generic;
+      for(const k of tr){ if(USERPIC_PIN_TRAIT[k]){ pin=USERPIC_PIN_TRAIT[k]; break; } }
+    }
   } else if(meme){                             // a specific meme template
     const P=memePunch(meme)||meme.name;
     const sub=t=>t.replace(/\{punch\}/g,P).replace(/\{name\}/g,meme.name);
@@ -590,6 +684,58 @@ function attachPhoto(postEl, meme){
   const setSrc=url=>{ if(!url){ wrap.remove(); return; } bg.src=url; im.src=url; postEl.dataset.full=url; };
   if(meme.picId!=null){ getPicURL(meme.picId).then(setSrc).catch(()=>wrap.remove()); }
   else { setSrc(meme.src); }
+  if(meme.user){ postEl.dataset.userpic='1'; if(meme.picId!=null) postEl.dataset.picid=String(meme.picId); }
+}
+
+/* ============ on-device vision model (CLIP via transformers.js) ============
+   Loads lazily the first time you open comments on one of YOUR photos. Runs entirely
+   in the browser — the photo never leaves the device. Everything degrades gracefully:
+   if the model can't load, we keep the look-based comments. */
+let _clip=null,_clipLoading=null,_clipFailed=false;
+const _conceptCache=new Map(); // picid -> concept key (so each photo is read once)
+function aiEnabled(){ try{ return localStorage.getItem('scrollz_ai')!=='0'; }catch(e){ return true; } }
+function loadClip(){
+  if(_clip) return Promise.resolve(_clip);
+  if(_clipLoading) return _clipLoading;
+  toast("🧠 downloading photo-AI once (~85MB, wifi best)…");
+  _clipLoading=(async()=>{
+    const mod=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3');
+    mod.env.allowLocalModels=false; mod.env.useBrowserCache=true;
+    const pipe=await mod.pipeline('zero-shot-image-classification','Xenova/clip-vit-base-patch32');
+    _clip=pipe; return pipe;
+  })();
+  _clipLoading.catch(()=>{ _clipFailed=true; _clipLoading=null; });
+  return _clipLoading;
+}
+async function conceptForURL(url){
+  const clip=await loadClip();
+  const res=await clip(url, AI_LABELS.map(l=>l[0]));
+  const top=Array.isArray(res)?res[0]:null;
+  if(!top || top.score<0.22) return null;
+  const hit=AI_LABELS.find(l=>l[0]===top.label);
+  return hit?hit[1]:null;
+}
+/* analyze the user photo behind a comment sheet, then rebuild + re-render its convo */
+async function aiAnalyzePost(pid){
+  if(!aiEnabled() || _clipFailed) return;
+  const post=document.querySelector('.post[data-pid="'+pid+'"]');
+  if(!post || post.dataset.userpic!=='1') return;
+  const key=post.dataset.picid||('url:'+post.dataset.full);
+  if(_conceptCache.has(key)){
+    const concept=_conceptCache.get(key);
+    if(concept){ commentStore[pid]=genThread(post.dataset.topic||'meme',{user:true,concept:concept}); if(activePid===pid) renderComments(pid); }
+    return;
+  }
+  const url=post.dataset.full; if(!url) return;
+  try{
+    const concept=await conceptForURL(url);
+    _conceptCache.set(key,concept);
+    if(concept){
+      commentStore[pid]=genThread(post.dataset.topic||'meme',{user:true,concept:concept});
+      if(activePid===pid){ renderComments(pid); }
+      toast("🧠 read your pic — it's giving "+concept);
+    }
+  }catch(e){ _clipFailed=true; }
 }
 
 /* ============ SATISFYING CANVAS VISUALS (on-device, always work) ============ */
@@ -926,14 +1072,14 @@ function doLike(post,x,y){
   // rad: giant heart slam + shockwave ring in the middle of the post
   const bh=document.createElement('div'); bh.className='bigheart'; bh.textContent='❤️';
   const rg=document.createElement('div'); rg.className='likeRing';
-  post.appendChild(rg); post.appendChild(bh); setTimeout(()=>{bh.remove();rg.remove();},860);
+  post.appendChild(rg); post.appendChild(bh); setTimeout(()=>{bh.remove();rg.remove();},860); SFX.sparkle();
   for(let kk=0;kk<3;kk++){
     const f=document.createElement('div'); f.className='float'; f.textContent=rnd(["❤️","💖","🔥","✨","💕"]);
     f.style.left=(x-20+ri(40))+'px'; f.style.top=(y-20)+'px'; f.style.animationDelay=(kk*60)+'ms';
     document.body.appendChild(f); setTimeout(()=>f.remove(),1200);
   }
   const reward=combo>=3?combo*5:5; addCoins(reward);
-  if(combo>=3){ burst('+'+reward, combo+'x COMBO! 🔥'); buzz([10,30,10]); SFX.pop(); }
+  if(combo>=3){ burst('+'+reward, combo+'x COMBO! 🔥'); buzz([10,30,10]); SFX.combo(combo); }
 }
 
 /* ============ burst + confetti ============ */
@@ -961,7 +1107,7 @@ function toast(txt){
   clearTimeout(t._t); t._t=setTimeout(()=>{t.style.transform='translateY(-140px)';},2600);
 }
 setInterval(()=>{ if(Math.random()<.7) toast(rnd(NOTIF)); }, 7000);
-function milestone(){ streak++; streakEl.textContent=streak; bump(document.getElementById('streakB')); burst('🔥 '+streak,'STREAK! KEEP GOING'); buzz([20,40,20,40]); SFX.jackpot(); addCoins(25); }
+function milestone(){ streak++; streakEl.textContent=streak; bump(document.getElementById('streakB')); burst('🔥 '+streak,'STREAK! KEEP GOING'); buzz([20,40,20,40]); SFX.streak(); addCoins(25); }
 function fakeShare(){ toast("📤 shared! +10 gems"); addCoins(10); buzz(30); SFX.swoosh(); }
 
 /* ============ COMMENTS ============ */
@@ -995,8 +1141,8 @@ function commentHTML(c,i,isReply,j){
     '<span data-act="cmreply" '+idAttr+'>💬 reply</span>'+opBadge+'</div>'+
   '</div></div>';
 }
-function openComments(pid){ activePid=pid; renderComments(pid); commentsEl.classList.add('open'); cmList.scrollTop=0; SFX.pop(); buzz(12); }
-function closeComments(){ commentsEl.classList.remove('open'); activePid=null; SFX.swoosh(); }
+function openComments(pid){ activePid=pid; renderComments(pid); commentsEl.classList.add('open'); cmList.scrollTop=0; SFX.open(); buzz(12); aiAnalyzePost(pid); }
+function closeComments(){ commentsEl.classList.remove('open'); activePid=null; SFX.close(); }
 document.getElementById('cmClose').addEventListener('click',closeComments);
 cmList.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b||!activePid)return;
@@ -1014,7 +1160,7 @@ function postComment(){
   if(!activePid)return; const v=cmInput.value.trim(); if(!v)return;
   commentStore[activePid].unshift({user:'you',verif:false,time:'now',text:v,likes:0,liked:false,replies:[]});
   cmInput.value=''; renderComments(activePid); cmList.scrollTop=0;
-  addCoins(5); SFX.coin(); buzz(15); toast("💬 posted! +5 gems");
+  SFX.send(); addCoins(5); buzz(15); toast("💬 posted! +5 gems");
 }
 document.getElementById('cmSend').addEventListener('click',postComment);
 cmInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ postComment(); } });
@@ -1030,7 +1176,7 @@ const obs=new IntersectionObserver(function(es){
       e.target.querySelectorAll('.fill').forEach(function(f,idx){ f.animate([{width:'0%'},{width:'100%'}],{duration:1500+idx*1200,fill:'forwards'}); });
       buzz(8);
       if(postsSeen%5===0){ addCoins(15); }
-      if(postsSeen%12===0){ burst('🎁','MYSTERY DROP! +100'); addCoins(100); buzz([15,30,60]); SFX.jackpot(); }
+      if(postsSeen%12===0){ burst('🎁','MYSTERY DROP! +100'); addCoins(100); buzz([15,30,60]); SFX.mystery(); }
       const all=feed.children;
       if([].indexOf.call(all,e.target) > all.length-4){ grow(6); }
     }
@@ -1065,7 +1211,7 @@ function slot(){
 
 /* ============ SHOP ============ */
 const shop=document.getElementById('shop');
-document.getElementById('shopBtn').addEventListener('click',function(){ shop.style.display='flex'; shopBal.textContent=coins.toLocaleString(); SFX.pop(); });
+document.getElementById('shopBtn').addEventListener('click',function(){ shop.style.display='flex'; shopBal.textContent=coins.toLocaleString(); SFX.open(); });
 document.getElementById('shopClose').addEventListener('click',function(){ shop.style.display='none'; SFX.swoosh(); });
 [].forEach.call(document.querySelectorAll('.buy'),function(b){
   b.addEventListener('click',function(){
@@ -1091,7 +1237,16 @@ document.getElementById('go').addEventListener('click',function(){
   const fp=feed.children[0]; if(fp){ fp.classList.remove('live'); void fp.offsetWidth; fp.classList.add('live'); }
   try{ SFX.jackpot(); buzz([30,50,30]); toast("🔥 welcome! your brain missed this"); setTimeout(function(){burst('+50','WELCOME BONUS');},400); addCoins(50); }catch(err){ console.log('fx skip',err); }
 });
-document.addEventListener('pointerdown',initAudio,{passive:true});
+// unlock/resume audio on the first gesture of any kind (iOS needs this)
+['pointerdown','touchstart','click','keydown'].forEach(ev=>document.addEventListener(ev,initAudio,{passive:true}));
+// satisfying tap on every interactive control
+document.addEventListener('pointerdown',function(e){
+  if(!AC||!soundOn) return;
+  if(e.target.closest('button,.badge,.rbtn,.pack,.buy,.cmMeta span,.sheetclose,.cmHead .x,#go,.likeBtn,.cmBtn,.shareBtn')) SFX.tap();
+},{passive:true});
+// sound on/off toggle
+document.getElementById('soundBtn').addEventListener('click',function(e){ e.stopPropagation(); toggleSound(); });
+(function(){ const b=document.getElementById('soundBtn'); if(b) b.textContent=soundOn?'🔊':'🔇'; })();
 
 /* ============ rad: rotating hype taglines on the gate ============ */
 const GATE_TAGS=[
@@ -1113,7 +1268,7 @@ const GATE_TAGS=[
 /* ============ PWA: install + keep the home-screen app on the newest version ============
    The service worker is NETWORK-FIRST, so every online launch pulls the latest build
    and only falls back to cache when offline — the app can't get stuck on an old version. */
-const APP_VERSION='v12';
+const APP_VERSION='v14';
 (function(){ const v=document.getElementById('verTag'); if(v) v.textContent='SCROLLZ '+APP_VERSION; })();
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
