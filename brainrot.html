@@ -46,7 +46,7 @@
   .memecap.top{top:calc(62px + env(safe-area-inset-top)); font-size:clamp(21px,7vw,38px);}
   .memecap.bot{bottom:184px; font-size:clamp(21px,7vw,38px);}
   .satcanvas{position:absolute; inset:0; width:100%; height:100%; z-index:0; object-fit:cover;}
-  .expandHint{position:absolute; top:calc(96px + env(safe-area-inset-top)); right:10px; z-index:7; background:#000a; border:1px solid #ffffff33; border-radius:999px; padding:5px 11px; font-size:12px; font-weight:800; color:#fff; pointer-events:none; opacity:.85;}
+  .expandHint{position:absolute; top:calc(132px + env(safe-area-inset-top)); right:10px; z-index:7; background:#000a; border:1px solid #ffffff33; border-radius:999px; padding:5px 11px; font-size:12px; font-weight:800; color:#fff; pointer-events:none; opacity:.85;}
 
   .vidlayer{position:absolute; inset:0; mix-blend-mode:screen; opacity:.42; z-index:2; pointer-events:none;}
   .blob{position:absolute; width:60vw; height:60vw; border-radius:50%; filter:blur(45px); animation:drift 10s ease-in-out infinite;}
@@ -190,13 +190,53 @@
   .cmBar button{background:linear-gradient(90deg,var(--hot),var(--gold)); color:#000; border:none; border-radius:999px; padding:0 20px; font-weight:900; cursor:pointer;}
 
   /* ===== casino-mode ambient stimuli ===== */
-  #ticker{position:fixed; top:50px; left:0; right:0; height:22px; z-index:45; background:linear-gradient(90deg,#170a12,#0a0f18); border-bottom:1px solid #ffffff14; overflow:hidden; white-space:nowrap; pointer-events:none;}
+  /* tab + filter bar */
+  #navbar{position:fixed; top:50px; left:0; right:0; height:36px; z-index:47; display:flex; align-items:center; gap:6px; padding:0 8px; background:linear-gradient(180deg,#12121c,#0a0a12); border-bottom:1px solid #ffffff14; overflow-x:auto; white-space:nowrap; scrollbar-width:none;}
+  #navbar::-webkit-scrollbar{display:none;}
+  #navbar .tab{flex:0 0 auto; background:#00000000; border:none; color:#9aa; font-size:14px; font-weight:900; padding:6px 8px; cursor:pointer; position:relative;}
+  #navbar .tab.on{color:#fff;}
+  #navbar .tab.on::after{content:''; position:absolute; left:8px; right:8px; bottom:2px; height:3px; border-radius:2px; background:linear-gradient(90deg,var(--hot),var(--gold));}
+  #navbar .navdiv{flex:0 0 auto; width:1px; height:18px; background:#ffffff22; margin:0 2px;}
+  #navbar .chip{flex:0 0 auto; background:#1c1c28; border:1px solid #ffffff1f; color:#ccd; font-size:12px; font-weight:800; padding:5px 11px; border-radius:999px; cursor:pointer;}
+  #navbar .chip.on{background:linear-gradient(90deg,var(--hot),var(--gold)); color:#000; border-color:transparent;}
+  #ticker{position:fixed; top:86px; left:0; right:0; height:22px; z-index:45; background:linear-gradient(90deg,#170a12,#0a0f18); border-bottom:1px solid #ffffff14; overflow:hidden; white-space:nowrap; pointer-events:none;}
   #ticker .run{display:inline-block; white-space:nowrap; font-size:12px; font-weight:800; color:var(--gold); padding-left:100%; animation:crawl 16s linear infinite; line-height:22px;}
   @keyframes crawl{to{transform:translateX(-100%)}}
-  #jackbar{position:fixed; top:72px; left:0; right:0; height:16px; z-index:45; background:#0c0c16; border-bottom:1px solid #ffffff14; overflow:hidden;}
+  #jackbar{position:fixed; top:108px; left:0; right:0; height:16px; z-index:45; background:#0c0c16; border-bottom:1px solid #ffffff14; overflow:hidden;}
   #jackfill{position:absolute; inset:0; width:0%; background:linear-gradient(90deg,var(--hot),var(--gold),var(--acid)); background-size:200% 100%; animation:shim 2s linear infinite; transition:width .4s ease; box-shadow:0 0 12px var(--gold);}
   #jacklabel{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#fff; text-shadow:0 1px 2px #000; letter-spacing:1px;}
-  #live{position:fixed; top:94px; left:8px; z-index:45; display:none; align-items:center; gap:5px; background:#000b; border:1px solid var(--hot); border-radius:999px; padding:3px 9px; font-size:11px; font-weight:900; color:#fff; pointer-events:none;}
+  #live{position:fixed; top:128px; left:8px; z-index:45; display:none; align-items:center; gap:5px; background:#000b; border:1px solid var(--hot); border-radius:999px; padding:3px 9px; font-size:11px; font-weight:900; color:#fff; pointer-events:none;}
+  .liveBadge{position:absolute; top:132px; left:10px; z-index:6; background:#000b; border:1px solid var(--hot); border-radius:999px; padding:4px 10px; font-size:12px; font-weight:900; color:#fff;}
+  .liveBadge b{color:var(--hot);}
+  /* poll + would-you-rather cards */
+  .pollcard{position:absolute; left:16px; right:16px; top:26%; z-index:4; background:rgba(8,10,20,.72); backdrop-filter:blur(4px); border:1px solid #ffffff22; border-radius:18px; padding:16px;}
+  .polltag{display:inline-block; background:var(--cyan); color:#000; font-weight:900; font-size:11px; letter-spacing:1px; padding:3px 9px; border-radius:999px; margin-bottom:10px;}
+  .pollq{font-size:clamp(19px,5.5vw,26px); font-weight:900; line-height:1.1; margin-bottom:14px;}
+  .pollopt{position:relative; overflow:hidden; background:#ffffff14; border:1px solid #ffffff22; border-radius:12px; padding:12px 14px; margin-bottom:9px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:800;}
+  .pollopt .pollbar{position:absolute; left:0; top:0; bottom:0; width:0; background:linear-gradient(90deg,var(--hot),var(--gold)); opacity:.55; transition:width .5s cubic-bezier(.2,1,.3,1); z-index:0;}
+  .pollopt .polltxt,.pollopt .pollpct{position:relative; z-index:1;}
+  .pollopt.chosen{border-color:var(--gold);}
+  .pollopt .pollpct{font-weight:900;}
+  .pollhint{text-align:center; font-size:12px; color:#bbb; font-weight:700; margin-top:4px;}
+  .wyrcard{position:absolute; inset:0; z-index:4; display:flex; flex-direction:column;}
+  .wyrhalf{flex:1; display:flex; align-items:center; justify-content:center; text-align:center; padding:20px; cursor:pointer; position:relative;}
+  .wyrhalf.a{background:linear-gradient(160deg,#ff2d78cc,#a11248cc);}
+  .wyrhalf.b{background:linear-gradient(160deg,#00a2ffcc,#5b17b8cc);}
+  .wyrhalf.chosen{outline:4px solid var(--gold); outline-offset:-4px;}
+  .wyrtxt{font-size:clamp(20px,6vw,30px); font-weight:900; line-height:1.1; text-shadow:0 2px 10px #000;}
+  .wyrpct{position:absolute; bottom:14px; font-size:34px; font-weight:900; color:#fff; text-shadow:0 2px 10px #000;}
+  .wyrmid{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2; background:#000; color:#fff; font-weight:900; font-size:13px; text-align:center; padding:8px 12px; border-radius:12px; border:2px solid #fff; line-height:1.1;}
+  /* profile sheet */
+  #profile{position:fixed; inset:0; z-index:151; background:rgba(5,5,10,.98); display:none; flex-direction:column; padding:18px; padding-top:calc(24px + env(safe-area-inset-top)); overflow-y:scroll;}
+  .profTop{display:flex; align-items:center; gap:14px; margin-bottom:14px;}
+  .profAv{width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,var(--hot),var(--gold),var(--cyan)); display:flex; align-items:center; justify-content:center; font-size:32px;}
+  .profName{font-size:24px; font-weight:900;}
+  .profBio{font-size:13px; color:#9aa; font-weight:700;}
+  #profRank{text-align:center; font-weight:900; font-size:15px; color:var(--gold); background:#ffffff10; border:1px solid #ffffff1f; border-radius:14px; padding:10px; margin-bottom:14px;}
+  #profGrid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;}
+  .stat{background:linear-gradient(135deg,#15151f,#1c1422); border:1px solid #ffffff1a; border-radius:14px; padding:14px;}
+  .stat .sv{font-size:26px; font-weight:900; color:#fff;}
+  .stat .sl{font-size:12px; color:#9aa; font-weight:800; margin-top:2px;}
   #live .dot{width:7px; height:7px; border-radius:50%; background:var(--hot); animation:blink 1s steps(2,end) infinite;}
   @keyframes blink{50%{opacity:.15}}
   .winPop{position:fixed; left:8px; bottom:180px; z-index:55; background:linear-gradient(90deg,#1c1233,#2a1424); border:1px solid var(--gold); border-radius:12px; padding:8px 12px; font-size:12px; font-weight:800; color:#fff; box-shadow:0 6px 24px #000a; transform:translateX(-125%); transition:transform .45s cubic-bezier(.2,1.5,.3,1); max-width:74vw; pointer-events:none;}
@@ -229,6 +269,18 @@
   <button class="badge" id="shopBtn">SHOP 🛒</button>
 </div>
 
+<div id="navbar">
+  <button class="tab on" data-mode="foryou">For You</button>
+  <button class="tab" data-mode="following">Following</button>
+  <button class="tab" data-mode="live">🔴 Live</button>
+  <span class="navdiv"></span>
+  <button class="chip on" data-f="all">All</button>
+  <button class="chip" data-f="meme">😹 Memes</button>
+  <button class="chip" data-f="game">🎮 Games</button>
+  <button class="chip" data-f="mypics">📷 Mine</button>
+  <button class="chip" data-f="spicy">🔥 Spicy</button>
+  <button class="chip" id="profileChip">👤 Me</button>
+</div>
 <div id="ticker"><div class="run" id="tickerRun"></div></div>
 <div id="jackbar"><div id="jackfill"></div><span id="jacklabel">🎰 JACKPOT 0%</span></div>
 <div id="live"><span class="dot"></span>LIVE · <span id="liveN" data-n="12483">12,483</span> watching</div>
@@ -265,6 +317,14 @@
   <div id="likedList"></div>
   <div class="lkEmpty" id="likedEmpty">tap ❤️ on posts and comments<br>to keep up with them here</div>
   <button id="likedClear">clear all</button>
+</div>
+
+<div id="profile">
+  <span class="sheetclose" id="profileClose">✕</span>
+  <div class="profTop"><div class="profAv">👤</div><div><div class="profName">@you</div><div class="profBio">certified scroller · brain: rotting 🧠</div></div></div>
+  <div id="profRank"></div>
+  <div id="profGrid"></div>
+  <div class="ftxt">all stats are for fun · aura is fake · you're doing great (are you?)</div>
 </div>
 
 <div id="comments">
@@ -418,6 +478,30 @@ const HACKS=[
 const TREND_LAB=["TRENDING #1","CERTIFIED VIRAL","THE NEW WAVE","#1 ON FYP","BREAKING THE ALGORITHM","EVERYONE'S DOING IT"];
 const TREND_NAME=["DRIPCORE","GLOOMscroll","HYPERAURA","FERALcore","goblinmaxxing","SIGMAwave","VAPORDOOM","BRAINROTcore","LIMINALrizz","DOPAMINEcore"];
 const TREND_STAT=["+9,400% this week","2.3B views and climbing","scientists can't explain it","up 12,000% since this morning","the FYP is 90% this now"];
+/* interactive post types */
+const POLLS=[
+  {q:"is a hotdog a sandwich?",o:["yes 🌭","absolutely not 💀"]},
+  {q:"pineapple on pizza — W or L?",o:["W 🍍","certified L"]},
+  {q:"mewing: real or placebo?",o:["real 😤","placebo 💀"]},
+  {q:"who wins: 100 npcs or 1 sigma?",o:["the 100 npcs","the sigma 🗿"]},
+  {q:"is skibidi actually peak comedy?",o:["yes 🚽","i'm too old for this"]},
+  {q:"is cereal a soup?",o:["yes 🥣","go touch grass"]},
+  {q:"texting just 'k' —",o:["totally fine","instant block"]},
+  {q:"3am doomscrolling is…",o:["a W lifestyle","a cry for help"]},
+  {q:"is 5'11\" basically 6'0\"?",o:["yes be serious","no and you know it"]},
+  {q:"aura points: real currency?",o:["deadass yes","not real 💀"]}
+];
+const WYRS=[
+  {a:"lose all your rizz forever",b:"gain 10k aura but be from ohio"},
+  {a:"be stuck in a 3-hour flame war",b:"lose your streak on day 99"},
+  {a:"phone stuck at 1% all day",b:"wifi that dies every 5 minutes"},
+  {a:"only speak in skibidi",b:"only speak in corporate email"},
+  {a:"be mewing in every photo",b:"be caught yapping on camera"},
+  {a:"everyone reads your group chats",b:"everyone sees your search history"},
+  {a:"never touch grass again",b:"never open your phone again"},
+  {a:"be the main character but cringe",b:"be the npc but iconic"}
+];
+const FOLLOWING=["@your.bestie","@the.gc","@mutual.moots","@day1.follower","@fav.creator","@we.been.friends","@ride.or.die","@certified.moot","@since.2019","@close.friends.only"];
 
 function fill(t,topic){ return t.replace("{n}",topic.noun).replace("{s}",topic.subj).replace("{v}",topic.verb); }
 
@@ -590,7 +674,8 @@ function buildFlameWar(c, pickName){
 /* ============ COHERENT THREAD ENGINE ============
    Builds a real conversation: a pinned creator prompt, on-topic reactions, and — very
    commonly — flame wars where different people argue with each other and escalate. */
-function genThread(topicKey, meme){
+function genThread(topicKey, meme, opts){
+  const spicy=opts&&opts.spicy;
   const topic=TOPICS[topicKey];
   let tops, pin;
   if(meme && meme.user){                       // the user's own photo
@@ -625,7 +710,7 @@ function genThread(topicKey, meme){
     const c={user:pickName(),verif:chance(.12),time:(1+ri(58))+(chance(.5)?'m':'h'),
       text:fill(topPool[i%topPool.length],topic),likes:ri(14000),liked:false,opLiked:chance(.18),replies:[]};
     // FLAME WAR: keep the #1 comment on-topic, but below it fights are common (~35%)
-    if(i>0 && chance(.35)){
+    if(i>0 && chance(spicy?.75:.35)){
       buildFlameWar(c, pickName);
     } else if(chance(.5)){
       // a normal little exchange where the replies actually respond
@@ -1004,6 +1089,12 @@ const commentStore={};
 let postCounter=0;
 
 /* ============ "Liked" — keep up with posts & arguments you liked ============ */
+/* ============ profile stats (persisted) ============ */
+let stats={rotted:0,likes:0,comments:0,saves:0,jackpots:0,wins:0,losses:0,gems:0};
+try{ Object.assign(stats, JSON.parse(localStorage.getItem('scrollz_stats')||'{}')); }catch(e){}
+let _statT=null; function saveStats(){ clearTimeout(_statT); _statT=setTimeout(()=>{ try{ localStorage.setItem('scrollz_stats',JSON.stringify(stats)); }catch(e){} },500); }
+function bumpStat(k,n){ stats[k]=(stats[k]||0)+(n||1); saveStats(); }
+
 let likedStore=[]; try{ likedStore=JSON.parse(localStorage.getItem('scrollz_liked')||'[]'); }catch(e){ likedStore=[]; }
 function saveLiked(){ try{ localStorage.setItem('scrollz_liked', JSON.stringify(likedStore.slice(0,200))); }catch(e){} }
 function updateLikedBadge(){ const b=document.getElementById('likedCount'); if(b) b.textContent=likedStore.length?(' '+likedStore.length):''; }
@@ -1038,32 +1129,56 @@ function saveFeed(){ clearTimeout(_feedSaveT); _feedSaveT=setTimeout(function(){
   catch(e){ try{ feedSpecs=feedSpecs.slice(-18); localStorage.setItem('scrollz_feed', JSON.stringify(feedSpecs)); }catch(e2){} }
 }, 500); }
 
+/* ---- feed mode + filter (tabs / chips) ---- */
+let feedMode='foryou', feedFilter='all';
+/* interactive card renderers (used at gen + after each vote) */
+function pollHTML(poll){
+  const total=poll.votes.reduce((a,b)=>a+b,0)||1, voted=poll.voted!=null; let opts='';
+  poll.o.forEach((t,i)=>{ const pct=Math.round(100*poll.votes[i]/total);
+    opts+='<div class="pollopt'+(poll.voted===i?' chosen':'')+'" data-i="'+i+'"><div class="pollbar" style="width:'+(voted?pct:0)+'%"></div><span class="polltxt">'+esc(t)+'</span><span class="pollpct">'+(voted?pct+'%':'')+'</span></div>';
+  });
+  return '<div class="pollcard"><div class="polltag">📊 POLL · vote</div><div class="pollq">'+esc(poll.q)+'</div>'+opts+'<div class="pollhint">'+(voted?total.toLocaleString()+' votes':'tap an option 👆')+'</div></div>';
+}
+function wyrHTML(w){
+  const voted=w.voted!=null, total=(w.va+w.vb)||1, pa=Math.round(100*w.va/total), pb=100-pa;
+  return '<div class="wyrcard"><div class="wyrhalf a'+(w.voted==='a'?' chosen':'')+'" data-s="a"><div class="wyrtxt">'+esc(w.a)+'</div>'+(voted?'<div class="wyrpct">'+pa+'%</div>':'')+'</div><div class="wyrmid">🤔 WOULD YOU<br>RATHER</div><div class="wyrhalf b'+(w.voted==='b'?' chosen':'')+'" data-s="b"><div class="wyrtxt">'+esc(w.b)+'</div>'+(voted?'<div class="wyrpct">'+pb+'%</div>':'')+'</div></div>';
+}
 /* build a fresh post spec — captures every random choice so it can be re-rendered later */
 function genSpec(force){
-  const pid='p'+(postCounter++);
-  const roll=ri(100); let kind;
-  if(roll<56) kind='photo'; else if(roll<68) kind='game'; else if(roll<78) kind='satisfy';
-  else if(roll<86) kind='tabloid'; else if(roll<93) kind='hack'; else kind='trend';
+  const pid='p'+(postCounter++); let kind;
+  if(feedFilter==='game') kind='game';
+  else if(feedFilter==='meme'||feedFilter==='mypics') kind='photo';
+  else {
+    const roll=ri(100);
+    if(roll<44) kind='photo'; else if(roll<56) kind='game'; else if(roll<65) kind='satisfy';
+    else if(roll<74) kind='poll'; else if(roll<81) kind='wyr'; else if(roll<88) kind='tabloid';
+    else if(roll<94) kind='hack'; else kind='trend';
+  }
+  if(feedMode==='following' && !['photo','game','poll','wyr'].includes(kind)) kind=chance(.6)?'photo':'game';
   let userPic=null;
   if(force!=null){ kind='photo'; userPic=force; }
-  else if(userPicIds.length && (kind==='photo'?chance(.6):chance(.22))){ kind='photo'; userPic=rnd(userPicIds); }
+  else if(feedFilter==='mypics'){ userPic=userPicIds.length?rnd(userPicIds):null; }
+  else if(feedFilter!=='meme' && userPicIds.length && kind==='photo' && chance(.45)){ userPic=rnd(userPicIds); }
   const meme = kind==='photo' ? (userPic!=null?{name:'your photo',cap:null,user:true,picId:userPic}:pickMeme()) : null;
-  const topicKey = kind==='photo'?'meme':kind==='satisfy'?'satisfy':kind==='game'?'game':rnd(TOPIC_KEYS);
+  const topicKey = kind==='photo'?'meme':kind==='satisfy'?'satisfy':kind==='game'?'game':(kind==='poll'||kind==='wyr')?'hot_take':rnd(TOPIC_KEYS);
   const topic=TOPICS[topicKey];
-  const thread=genThread(topicKey, meme);
+  const thread=genThread(topicKey, meme, {spicy:feedFilter==='spicy'});
   const pal=rnd(PALETTES), col1=pal[0], col2=pal[1];
-  const handle = userPic!=null?"@you":kind==='game'?rnd(GAME_HANDLES):kind==='photo'?rnd(MEME_HANDLES):rnd(HANDLES);
+  const handle = userPic!=null?"@you": feedMode==='following'?rnd(FOLLOWING) : kind==='game'?rnd(GAME_HANDLES):kind==='photo'?rnd(MEME_HANDLES):rnd(HANDLES);
   const cap = userPic!=null?rnd(MYPIC_CAPS):rnd(topic.cap);
   const tags = userPic!=null?"#mypics #real #memories #core #fyp":kind==='photo'?"#meme #relatable #real #fyp #foryou":"#"+topicKey+" #"+rnd(A)+" #fyp #foryou #viral";
-  let satKind, overlay='';
+  let satKind='plasma', overlay='', poll=null, wyr=null;
   if(kind==='satisfy'){ const st=rnd(SAT_THEMES); satKind=st.kind; overlay='<div class="trendcard" style="top:auto;bottom:160px"><span class="lab">'+esc(st.lab)+'</span></div>'; }
   else if(kind==='game'){ satKind='blocks'; overlay='<div class="trendcard" style="top:auto;bottom:150px"><span class="lab">⛏ SPED-UP GAMEPLAY · 2×</span></div>'; }
+  else if(kind==='poll'){ satKind=rnd(['plasma','slime','flow']); const P=rnd(POLLS); poll={q:P.q,o:P.o.slice(),votes:P.o.map(()=>500+ri(9000)),voted:null}; overlay=pollHTML(poll); }
+  else if(kind==='wyr'){ satKind=rnd(['plasma','slime','flow']); const W=rnd(WYRS); wyr={a:W.a,b:W.b,va:300+ri(6000),vb:300+ri(6000),voted:null}; overlay=wyrHTML(wyr); }
   else { satKind=rnd(['plasma','slime','flow']);
     if(kind==='tabloid') overlay='<div class="tabloid"><span class="kicker">'+rnd(TAB_KICK)+'</span><div class="head"><em>'+esc(rnd(CELEB))+'</em> '+rnd(TAB_VERB)+' '+esc(rnd(TAB_DOING))+'</div><div class="sub">'+rnd(TAB_SUB)+' '+rnd(EMO)+'</div></div>';
     else if(kind==='hack'){ const h=rnd(HACKS); let steps=''; h.s.forEach(function(st){steps+='<li>'+esc(st)+'</li>';}); overlay='<div class="hackcard"><span class="badge2">🧠 LIFE HACK</span><h3>'+esc(h.t)+'</h3><ol>'+steps+'</ol><div class="mind">'+esc(h.m)+'</div></div>'; }
     else if(kind==='trend') overlay='<div class="trendcard"><span class="lab">'+rnd(TREND_LAB)+'</span><div class="big">'+esc(rnd(TREND_NAME))+'</div><div class="stat">'+esc(rnd(TREND_STAT))+'</div></div>';
   }
-  return {pid,kind,topicKey,emoji:(topic.emoji||'📱'),col1,col2,handle,cap,tags,satKind,overlay,meme,thread,
+  return {pid,kind,topicKey,emoji:(topic.emoji||'📱'),col1,col2,handle,cap,tags,satKind,overlay,meme,thread,poll,wyr,
+    live:(feedMode==='live'), viewers:(feedMode==='live'?200+ri(9000):0),
     likeN:(ri(900)+50)+"."+ri(9)+"K", cmN:(thread.length+ri(900))+"", shareN:ri(900)+"", userLiked:false, userSaved:false};
 }
 
@@ -1079,6 +1194,7 @@ function makePost(force, spec){
   let inner='';
   if(spec.kind!=='game'){ inner+='<div class="vidlayer"><div class="blob" style="background:'+spec.col1+';top:-10%;left:-10%"></div><div class="blob" style="background:'+spec.col2+';bottom:-10%;right:-10%;animation-delay:-4.5s"></div></div><div class="scanline"></div>'; }
   inner+=spec.overlay;
+  if(spec.live){ inner+='<div class="liveBadge">🔴 LIVE · <b class="lvW">'+spec.viewers.toLocaleString()+'</b> watching</div>'; }
   if(spec.meme){ inner+='<div class="expandHint">🔍 tap to expand</div>'; }
   inner+='<div class="vignette"></div><div class="grain"></div>';
   inner+='<div class="progress">'+'<div class="seg"><div class="fill"></div></div>'.repeat(5)+'</div>';
@@ -1103,9 +1219,12 @@ function makePost(force, spec){
   p.querySelector('.cmBtn').addEventListener('click',function(e){e.stopPropagation();openComments(pid);});
   const saveBtn=p.querySelector('.rail .rbtn:last-child');
   if(saveBtn) saveBtn.addEventListener('click',function(e){e.stopPropagation();
-    if(!saveBtn.classList.contains('liked')){ saveBtn.classList.add('liked'); const sp=specByPid[pid]; if(sp){sp.userSaved=true; saveFeed();} addLiked({kind:'saved', pid:pid, title:'⭐ '+(p.dataset.handle||'a post'), text:p.dataset.cap||''}); toast("⭐ saved! find it in ❤️"); SFX.coin(); buzz(12); pushTicker('⭐ you saved a post'); addJackpot(3); }
+    if(!saveBtn.classList.contains('liked')){ saveBtn.classList.add('liked'); const sp=specByPid[pid]; if(sp){sp.userSaved=true; saveFeed();} addLiked({kind:'saved', pid:pid, title:'⭐ '+(p.dataset.handle||'a post'), text:p.dataset.cap||''}); toast("⭐ saved! find it in ❤️"); SFX.coin(); buzz(12); pushTicker('⭐ you saved a post'); bumpStat('saves'); addJackpot(3); }
   });
-  if(isNew){ feedSpecs.push(spec); if(feedSpecs.length>FEED_CAP) feedSpecs.shift(); saveFeed(); }
+  // interactive polls / would-you-rather
+  if(spec.kind==='poll'){ const card=p.querySelector('.pollcard'); if(card) card.addEventListener('click',function(e){ const opt=e.target.closest('.pollopt'); if(!opt)return; e.stopPropagation(); const sp=specByPid[pid]; if(!sp||!sp.poll||sp.poll.voted!=null)return; const i=+opt.dataset.i; sp.poll.voted=i; sp.poll.votes[i]+=1; sp.overlay=pollHTML(sp.poll); card.outerHTML=sp.overlay; SFX.coin(); buzz(12); addCoins(5); toast("📊 voted! +5 gems"); pushTicker('📊 you voted in a poll'); addJackpot(3); saveFeed(); }); }
+  if(spec.kind==='wyr'){ const card=p.querySelector('.wyrcard'); if(card) card.addEventListener('click',function(e){ const half=e.target.closest('.wyrhalf'); if(!half)return; e.stopPropagation(); const sp=specByPid[pid]; if(!sp||!sp.wyr||sp.wyr.voted!=null)return; const s=half.dataset.s; sp.wyr.voted=s; if(s==='a')sp.wyr.va++; else sp.wyr.vb++; sp.overlay=wyrHTML(sp.wyr); card.outerHTML=sp.overlay; SFX.coin(); buzz(12); addCoins(5); toast("🤔 answered! +5 gems"); pushTicker('🤔 you picked a side'); addJackpot(3); saveFeed(); }); }
+  if(isNew && feedMode==='foryou' && feedFilter==='all'){ feedSpecs.push(spec); if(feedSpecs.length>FEED_CAP) feedSpecs.shift(); saveFeed(); }
   return p;
 }
 
@@ -1127,7 +1246,7 @@ function doLike(post,x,y){
     btn.classList.add('liked'); btn.querySelector('.ricon').textContent='❤️';
     addLiked({kind:'post', pid:post.dataset.pid, title:(post.dataset.emoji||'')+' '+(post.dataset.handle||'a post'), text:post.dataset.cap||''});
     const sp=specByPid[post.dataset.pid]; if(sp){ sp.userLiked=true; saveFeed(); }
-    pushTicker('❤️ you liked '+(post.dataset.handle||'a post')); addJackpot(2);
+    bumpStat('likes'); pushTicker('❤️ you liked '+(post.dataset.handle||'a post')); addJackpot(2);
   }
   buzz(20); SFX.like();
   const now=Date.now(); if(now-lastLikeTime<2500){combo++;}else{combo=1;} lastLikeTime=now;
@@ -1189,7 +1308,7 @@ function buildTicker(){ const r=document.getElementById('tickerRun'); if(!r) ret
 let jackpot=0;
 function updateJack(){ const f=document.getElementById('jackfill'); if(f) f.style.width=jackpot+'%'; const l=document.getElementById('jacklabel'); if(l) l.textContent='🎰 JACKPOT '+Math.floor(jackpot)+'%'; }
 function addJackpot(n){ if(!started()) return; jackpot=Math.min(100,jackpot+n); updateJack(); if(jackpot>=100) jackpotHit(); }
-function jackpotHit(){ jackpot=0; updateJack(); const amt=500+ri(1500); addCoins(amt); burst('🎰 +'+amt.toLocaleString()+' 💎','JACKPOT!!! 🤑'); confetti(); if(soundOn) SFX.jackpot(); buzz([30,60,30,60,90]); pushTicker('🎰 YOU HIT THE JACKPOT +'+amt+' 💎'); for(let i=0;i<26;i++) setTimeout(floatGem,i*40); }
+function jackpotHit(){ jackpot=0; updateJack(); const amt=500+ri(1500); addCoins(amt); bumpStat('jackpots'); burst('🎰 +'+amt.toLocaleString()+' 💎','JACKPOT!!! 🤑'); confetti(); if(soundOn) SFX.jackpot(); buzz([30,60,30,60,90]); pushTicker('🎰 YOU HIT THE JACKPOT +'+amt+' 💎'); for(let i=0;i<26;i++) setTimeout(floatGem,i*40); }
 updateJack();
 
 // live "watching" counter that jitters
@@ -1208,6 +1327,8 @@ function floatGem(){ const g=document.createElement('div'); g.className='floatge
 setInterval(()=>{ if(started() && chance(.95)){ const k=2+ri(3); for(let i=0;i<k;i++) setTimeout(floatGem,i*180); } }, 1600);
 // coin rain rushes
 setInterval(()=>{ if(started() && chance(.6)){ for(let i=0;i<18;i++) setTimeout(floatGem,i*55); if(soundOn) SFX.coin(); } }, 18000);
+// live posts' viewer counts tick like a real stream
+setInterval(()=>{ document.querySelectorAll('.liveBadge .lvW').forEach(function(el){ let n=parseInt((el.textContent||'0').replace(/,/g,''),10)||500; n+=ri(60)-25; if(n<80)n=80+ri(40); el.textContent=n.toLocaleString(); }); }, 1600);
 
 /* ============ COMMENTS ============ */
 const commentsEl=document.getElementById('comments');
@@ -1265,7 +1386,7 @@ function postComment(){
   commentStore[activePid].unshift(uc);
   cmInput.value=''; renderComments(activePid); cmList.scrollTop=0;
   SFX.send(); addCoins(5); buzz(15); toast("💬 posted! +5 gems");
-  pushTicker('💬 you posted a comment (brave)'); addJackpot(5); saveFeed();
+  pushTicker('💬 you posted a comment (brave)'); addJackpot(5); bumpStat('comments'); saveFeed();
   botsRespondTo(activePid, uc);
 }
 /* the internet reacts to YOUR comment: unhinged takes, then a flame war erupts,
@@ -1290,6 +1411,9 @@ function botsRespondTo(pid, uc){
     saveFeed();
   }, d); d+=650+ri(1100); });
   setTimeout(()=>{ toast("👀 people are replying to your comment"); buzz(15); }, 900);
+  // did you win the argument or get ratioed?
+  setTimeout(()=>{ if(chance(.5)){ bumpStat('wins'); toast("🏆 you WON the argument (+50 aura)"); addCoins(50); if(soundOn)SFX.streak(); pushTicker('🏆 you won an argument'); }
+    else{ bumpStat('losses'); toast("💀 you got ratioed... it happens"); if(soundOn)SFX.drop(); pushTicker('💀 you got ratioed'); } }, 1600+ri(1500));
 }
 document.getElementById('cmSend').addEventListener('click',postComment);
 cmInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ postComment(); } });
@@ -1302,7 +1426,7 @@ else { grow(8); }
 const obs=new IntersectionObserver(function(es){
   es.forEach(function(e){
     if(e.isIntersecting){
-      postsSeen++; SFX.swoosh();
+      postsSeen++; bumpStat('rotted'); SFX.swoosh();
       e.target.classList.add('live'); // rad: pop the caption/rail in as it snaps into view
       e.target.querySelectorAll('.fill').forEach(function(f,idx){ f.animate([{width:'0%'},{width:'100%'}],{duration:1500+idx*1200,fill:'forwards'}); });
       buzz(8);
@@ -1361,6 +1485,42 @@ document.getElementById('likedList').addEventListener('click',function(e){
     openComments(pid);
   } else { toast("that thread rolled off — like fresh ones to keep them 👀"); }
 });
+
+/* ============ tabs / filters ============ */
+function applyFeed(){
+  feed.innerHTML=''; jackpot=0; updateJack();
+  if(feedMode==='foryou' && feedFilter==='all' && feedSpecs.length){ feedSpecs.slice(-FEED_CAP).forEach(function(s){ try{ makePost(null,s); }catch(e){} }); if(feed.children.length<6) grow(8-feed.children.length); }
+  else { grow(8); }
+  if(feedFilter==='mypics' && !userPicIds.length) toast("add your photos with 📁 to fill this feed");
+  feed.scrollTop=0; SFX.swoosh(); buzz(12);
+}
+document.getElementById('navbar').addEventListener('click',function(e){
+  const t=e.target.closest('.tab'), c=e.target.closest('.chip');
+  if(e.target.id==='profileChip'){ openProfile(); return; }
+  if(t){ feedMode=t.dataset.mode; [].forEach.call(document.querySelectorAll('#navbar .tab'),x=>x.classList.toggle('on',x===t)); const lv=document.getElementById('live'); if(lv) lv.style.display=(feedMode==='live')?'flex':'none'; applyFeed(); SFX.tap(); return; }
+  if(c && c.dataset.f){ feedFilter=c.dataset.f; [].forEach.call(document.querySelectorAll('#navbar .chip[data-f]'),x=>x.classList.toggle('on',x===c)); applyFeed(); SFX.tap(); return; }
+});
+
+/* ============ profile ============ */
+function rankFor(r){ if(r<20)return'🥚 Fresh NPC'; if(r<80)return'🧠 Brainrot Apprentice'; if(r<200)return'🔥 Certified Scroller'; if(r<500)return'🗿 Sigma Doomscroller'; if(r<1200)return'👑 Aura Farmer Supreme'; return'💀 Terminally Online (GOATED)'; }
+function openProfile(){
+  const g=document.getElementById('profGrid');
+  const wl=(stats.wins+stats.losses)?Math.round(100*stats.wins/(stats.wins+stats.losses)):0;
+  const tiles=[
+    ['💎',coins.toLocaleString(),'aura / gems'],
+    ['🔥',streak,'day streak'],
+    ['🧠',stats.rotted.toLocaleString(),'posts rotted'],
+    ['❤️',stats.likes.toLocaleString(),'likes given'],
+    ['💬',stats.comments.toLocaleString(),'comments posted'],
+    ['⭐',stats.saves.toLocaleString(),'saved'],
+    ['🎰',stats.jackpots.toLocaleString(),'jackpots hit'],
+    ['🏆',stats.wins+'-'+stats.losses,'argument W-L ('+wl+'%)']
+  ];
+  g.innerHTML=tiles.map(t=>'<div class="stat"><div class="sv">'+t[0]+' '+t[1]+'</div><div class="sl">'+t[2]+'</div></div>').join('');
+  document.getElementById('profRank').textContent=rankFor(stats.rotted)+' · lvl '+(1+Math.floor(stats.rotted/25));
+  document.getElementById('profile').style.display='flex'; SFX.open();
+}
+document.getElementById('profileClose').addEventListener('click',function(){ document.getElementById('profile').style.display='none'; SFX.close(); });
 [].forEach.call(document.querySelectorAll('.buy'),function(b){
   b.addEventListener('click',function(){
     const g=parseInt(b.dataset.gems,10);
@@ -1381,7 +1541,7 @@ document.getElementById('spinWheel').addEventListener('click',function(){
 /* ============ gate ============ */
 document.getElementById('go').addEventListener('click',function(){
   document.getElementById('gate').style.display='none'; initAudio();
-  const lv=document.getElementById('live'); if(lv) lv.style.display='flex';
+  // (the global LIVE pill only shows on the Live tab now)
   // rad: replay the top post's reveal now that the gate is gone
   const fp=feed.children[0]; if(fp){ fp.classList.remove('live'); void fp.offsetWidth; fp.classList.add('live'); }
   try{ SFX.jackpot(); buzz([30,50,30]); toast("🔥 welcome! your brain missed this"); setTimeout(function(){burst('+50','WELCOME BONUS');},400); addCoins(50); }catch(err){ console.log('fx skip',err); }
@@ -1417,7 +1577,7 @@ const GATE_TAGS=[
 /* ============ PWA: install + keep the home-screen app on the newest version ============
    The service worker is NETWORK-FIRST, so every online launch pulls the latest build
    and only falls back to cache when offline — the app can't get stuck on an old version. */
-const APP_VERSION='v18';
+const APP_VERSION='v19';
 (function(){ const v=document.getElementById('verTag'); if(v) v.textContent='SCROLLZ '+APP_VERSION; })();
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
