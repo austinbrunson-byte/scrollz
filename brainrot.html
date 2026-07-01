@@ -161,8 +161,9 @@
   <h1>SCROLLZ</h1>
   <p>real memes 💀 satisfying loops 🌀 headlines 📰<br>tap any meme to go fullscreen</p>
   <button id="go">TAP TO ROT 🧠</button>
-  <button id="gatePics" style="padding:12px 30px;font-size:15px;font-weight:800;border:1px solid #ffffff33;border-radius:999px;background:#000;color:#fff;cursor:pointer">📁 add your own photos</button>
-  <p style="font-size:11px;opacity:.5">tap = consent to lose 5 minutes • gems are fake • celebs are made up<br>your photos stay on your device — nothing is uploaded</p>
+  <button id="gatePics" style="padding:12px 30px;font-size:15px;font-weight:800;border:1px solid #ffffff33;border-radius:999px;background:#000;color:#fff;cursor:pointer">📷 add photos from your phone</button>
+  <div id="gatePicsCount" style="font-size:12px;font-weight:800;color:var(--acid);min-height:14px"></div>
+  <p style="font-size:11px;opacity:.5">tap = consent to lose 5 minutes • gems are fake • celebs are made up<br>your photos are saved on this device only — nothing is uploaded</p>
 </div>
 
 <input type="file" id="picInput" accept="image/*" multiple style="display:none">
@@ -495,8 +496,9 @@ const SAT_THEMES=[
   {lab:"🫧 LAVA LAMP",kind:'plasma'},{lab:"🍭 GLASS BLENDING",kind:'flow'},
   {lab:"🌊 LIQUID LOOP",kind:'plasma'},{lab:"🧊 GEL PRESS",kind:'slime'}];
 
-/* attachPhoto: real local meme as a plain <img> (no CORS, no canvas) with a blurred
-   backdrop + HTML Impact caption. Same-origin, so it just works. */
+/* attachPhoto: a real picture as a plain <img> (no CORS, no canvas) over a blurred
+   backdrop + HTML Impact caption. Local memes have meme.src; the user's own photos
+   are resolved from IndexedDB via meme.picId. */
 function attachPhoto(postEl, meme){
   const wrap=document.createElement('div'); wrap.className='memewrap';
   const bg=document.createElement('img'); bg.className='photobg ken'; bg.decoding='async'; bg.alt='';
@@ -506,14 +508,15 @@ function attachPhoto(postEl, meme){
   if(cap[0]) capHTML+='<div class="memecap top">'+esc(cap[0])+'</div>';
   if(cap[1]) capHTML+='<div class="memecap bot">'+esc(cap[1])+'</div>';
   im.addEventListener('load',()=>{ bg.classList.add('on'); im.classList.add('on'); });
-  im.addEventListener('error',()=>{ wrap.remove(); }); // local: should never happen; canvas floor stays
-  bg.src=meme.src; im.src=meme.src;
+  im.addEventListener('error',()=>{ wrap.remove(); }); // fall back to the canvas floor
   wrap.appendChild(bg); wrap.appendChild(im);
   wrap.insertAdjacentHTML('beforeend', capHTML);
   const sat=postEl.querySelector('.satcanvas');
   if(sat && sat.nextSibling) postEl.insertBefore(wrap, sat.nextSibling);
   else postEl.appendChild(wrap);
-  postEl.dataset.full=meme.src;
+  const setSrc=url=>{ if(!url){ wrap.remove(); return; } bg.src=url; im.src=url; postEl.dataset.full=url; };
+  if(meme.picId!=null){ getPicURL(meme.picId).then(setSrc).catch(()=>wrap.remove()); }
+  else { setSrc(meme.src); }
 }
 
 /* ============ SATISFYING CANVAS VISUALS (on-device, always work) ============ */
@@ -587,32 +590,94 @@ setInterval(()=>{ secs++; let m=Math.floor(secs/60),s=secs%60; guiltEl.textConte
 function bump(el){el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');}
 function addCoins(n){ coins+=n; coinsEl.textContent=coins.toLocaleString(); if(shopBal)shopBal.textContent=coins.toLocaleString(); bump(document.getElementById('coinsB')); SFX.coin(); }
 
-/* ============ user's own photos ============ */
-const userPics=[]; // object URLs for photos the user loads from their device (never uploaded)
-const MYPIC_CAPS=["from the camera roll 📸","found this in my photos","no context, just vibes","why do i have 3000 of these","the archive is deep","peak of my camera roll fr","this one lives rent free","screenshotting was worth it"];
-function addUserPics(fileList){
-  if(!fileList||!fileList.length) return;
-  let added=0;
-  for(const f of fileList){
-    if(!f.type || f.type.indexOf('image/')!==0) continue;
-    userPics.push(URL.createObjectURL(f)); added++;
+/* ============ user's own photos (persisted, never uploaded) ============
+   Photos live in IndexedDB on THIS device, so they stay between sessions — pick
+   once, they're always in the feed. Blobs stay in IDB; we only make an object URL
+   for a photo when a post actually needs it (cheap even with thousands of pics). */
+const userPicIds=[];            // IDB keys of the user's photos, in memory
+const _urlCache=new Map();      // id -> object URL (created lazily, revoked on clear)
+const MYPIC_CAPS=["from the camera roll 📸","found this in my photos","no context, just vibes","why do i even have this","the archive is deep","peak of my camera roll fr","this one lives rent free","screenshotting was worth it","found in the junk folder 💀","random but here we are"];
+
+/* ---- tiny IndexedDB wrapper ---- */
+let _db=null;
+function openDB(){
+  return new Promise((res,rej)=>{
+    let r; try{ r=indexedDB.open('scrollz-pics',1); }catch(e){ return rej(e); }
+    r.onupgradeneeded=()=>{ const db=r.result; if(!db.objectStoreNames.contains('pics')) db.createObjectStore('pics',{autoIncrement:true}); };
+    r.onsuccess=()=>{ _db=r.result; res(_db); };
+    r.onerror=()=>rej(r.error);
+  });
+}
+function idbAddMany(files,onProgress){
+  return new Promise((res,rej)=>{
+    const tx=_db.transaction('pics','readwrite'), st=tx.objectStore('pics'), keys=[]; let i=0;
+    files.forEach(f=>{ const rq=st.add(f); rq.onsuccess=()=>{ keys.push(rq.result); if(onProgress&&(++i%100===0))onProgress(i); }; });
+    tx.oncomplete=()=>res(keys); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error);
+  });
+}
+function idbKeys(){ return new Promise((res,rej)=>{ const rq=_db.transaction('pics','readonly').objectStore('pics').getAllKeys(); rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>rej(rq.error); }); }
+function idbGetBlob(id){ return new Promise((res,rej)=>{ const rq=_db.transaction('pics','readonly').objectStore('pics').get(id); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
+function idbClear(){ return new Promise((res,rej)=>{ const rq=_db.transaction('pics','readwrite').objectStore('pics').clear(); rq.onsuccess=()=>res(); rq.onerror=()=>rej(rq.error); }); }
+
+function getPicURL(id){
+  if(_urlCache.has(id)) return Promise.resolve(_urlCache.get(id));
+  return idbGetBlob(id).then(blob=>{ if(!blob) return null; const u=URL.createObjectURL(blob); _urlCache.set(id,u); return u; });
+}
+function updatePicBadge(){
+  const el=document.getElementById('picCount'); if(el) el.textContent=userPicIds.length?(' '+userPicIds.length):'';
+  const g=document.getElementById('gatePicsCount'); if(g) g.textContent=userPicIds.length?('✅ '+userPicIds.length+' of your photos are saved — tap to add more'):'';
+}
+async function addUserPics(fileList){
+  // accept image/* and also iPhone quirks: HEIC, or files that arrive with an empty type
+  const isImg=f=>f && ((f.type&&f.type.indexOf('image/')===0) || (/\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i).test(f.name||''));
+  const files=[...(fileList||[])].filter(isImg);
+  if(!files.length){ toast("🤔 no images found in that pick"); return; }
+  if(!_db){ try{ await openDB(); }catch(e){ toast("⚠️ can't save photos on this browser"); } }
+  let addedKeys=[];
+  toast("📸 saving "+files.length+" photos…");
+  if(_db){
+    try{ addedKeys=await idbAddMany(files,n=>toast("📸 saving… "+n+"/"+files.length)); }
+    catch(e){ toast("⚠️ ran out of space saving photos"); }
   }
-  if(!added){ toast("🤔 no images found in that pick"); return; }
-  const cnt=document.getElementById('picCount'); if(cnt) cnt.textContent=' '+userPics.length;
-  toast("📸 loaded "+added+" of your pics — they're in the feed now");
+  if(!addedKeys.length){ // fallback: session-only object URLs if IDB failed
+    files.forEach(f=>{ const id='mem'+Math.random().toString(36).slice(2); _urlCache.set(id,URL.createObjectURL(f)); addedKeys.push(id); });
+  }
+  userPicIds.push(...addedKeys);
+  updatePicBadge();
+  toast("✅ "+addedKeys.length+" pics added — they'll be here next time too");
   SFX.jackpot(); buzz([20,40,20]);
-  // surface a few immediately at the top so you see them right away
-  if(typeof feed!=='undefined' && feed){
-    for(let i=0;i<Math.min(4,added);i++){ const p=makePost(); feed.insertBefore(p,feed.firstChild); }
-    feed.scrollTop=0;
-  }
+  // surface the just-added photos at the very top so you see them immediately
+  for(let i=Math.min(6,addedKeys.length)-1;i>=0;i--){ const p=makePost(addedKeys[i]); feed.insertBefore(p,feed.firstChild); }
+  feed.scrollTop=0;
+}
+async function clearUserPics(){
+  if(!userPicIds.length){ toast("no photos to clear"); return; }
+  if(!confirm('Remove all '+userPicIds.length+' photos from SCROLLZ?\n(They stay in your device — this only removes them from the app.)')) return;
+  try{ if(_db) await idbClear(); }catch(e){}
+  _urlCache.forEach(u=>{ try{ URL.revokeObjectURL(u); }catch(e){} }); _urlCache.clear();
+  userPicIds.length=0; updatePicBadge(); toast("🗑 cleared your photos"); buzz(20);
 }
 (function wireUserPics(){
   const input=document.getElementById('picInput');
   const open=()=>{ if(input) input.click(); };
-  const pb=document.getElementById('picsBtn'); if(pb) pb.addEventListener('click',open);
-  const gp=document.getElementById('gatePics'); if(gp) gp.addEventListener('click',e=>{ e.stopPropagation(); open(); });
   if(input) input.addEventListener('change',()=>{ addUserPics(input.files); input.value=''; });
+  const pb=document.getElementById('picsBtn');
+  if(pb){                       // tap = add more · long-press = clear
+    let t=null,long=false;
+    const cancel=()=>clearTimeout(t);
+    pb.addEventListener('pointerdown',()=>{ long=false; t=setTimeout(()=>{ long=true; clearUserPics(); },600); });
+    pb.addEventListener('pointerup',cancel);
+    pb.addEventListener('pointercancel',cancel);
+    pb.addEventListener('pointerleave',cancel);
+    // open on the real click gesture — this is what iOS Safari needs to show the Photo Library
+    pb.addEventListener('click',()=>{ if(long){ long=false; return; } open(); });
+  }
+  const gp=document.getElementById('gatePics'); if(gp) gp.addEventListener('click',e=>{ e.stopPropagation(); open(); });
+  // drag & drop anywhere = load photos (easy desktop path)
+  document.addEventListener('dragover',e=>{ e.preventDefault(); });
+  document.addEventListener('drop',e=>{ e.preventDefault(); if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){ addUserPics(e.dataTransfer.files); } });
+  // restore previously-saved photos on startup
+  openDB().then(()=>idbKeys()).then(keys=>{ userPicIds.push(...keys); updatePicBadge(); }).catch(e=>{});
 })();
 
 /* ============ comments store ============ */
@@ -620,7 +685,7 @@ const commentStore={};
 let postCounter=0;
 
 /* ============ build a post ============ */
-function makePost(){
+function makePost(force){
   const p=document.createElement('div'); p.className='post';
   const pid='p'+(postCounter++); p.dataset.pid=pid;
 
@@ -633,12 +698,14 @@ function makePost(){
   else kind='trend';
 
   // if the user loaded their own photos, weave them into the feed's photo slots
+  // (force!=null pins a specific photo — used to surface just-added pics up top)
   let userPic=null;
-  if(userPics.length && (kind==='photo' ? chance(.6) : chance(.22))){ kind='photo'; userPic=rnd(userPics); }
+  if(force!=null){ kind='photo'; userPic=force; }
+  else if(userPicIds.length && (kind==='photo' ? chance(.6) : chance(.22))){ kind='photo'; userPic=rnd(userPicIds); }
 
   // pick the actual picture up front so the whole post — caption AND the comment
   // thread — can be generated to react to THIS specific meme/photo.
-  const meme = kind==='photo' ? (userPic ? {name:'your photo',cap:null,src:userPic,user:true} : pickMeme()) : null;
+  const meme = kind==='photo' ? (userPic!=null ? {name:'your photo',cap:null,user:true,picId:userPic} : pickMeme()) : null;
 
   // topic drives non-photo captions/threads; photo posts get a thread about the pic,
   // satisfy posts stay on-theme so the caption/convo match the visual.
@@ -649,9 +716,9 @@ function makePost(){
 
   // harmonious color pair for blobs + canvas (no more clashing randoms)
   const pal=rnd(PALETTES); const col1=pal[0], col2=pal[1];
-  const handle = userPic ? "@you" : (kind==='photo' ? rnd(MEME_HANDLES) : rnd(HANDLES));
-  const cap = userPic ? rnd(MYPIC_CAPS) : rnd(topic.cap);
-  const tags = userPic ? "#mypics #real #memories #core #fyp"
+  const handle = userPic!=null ? "@you" : (kind==='photo' ? rnd(MEME_HANDLES) : rnd(HANDLES));
+  const cap = userPic!=null ? rnd(MYPIC_CAPS) : rnd(topic.cap);
+  const tags = userPic!=null ? "#mypics #real #memories #core #fyp"
              : kind==='photo' ? "#meme #relatable #real #fyp #foryou"
              : "#"+topicKey+" #"+rnd(A)+" #fyp #foryou #viral";
 
